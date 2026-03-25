@@ -44,15 +44,15 @@ export default function Starfield() {
     }));
     setStars(generatedStars);
 
-    const generatedFoods: FloatingFood[] = Array.from({ length: 20 }, (_, i) => ({
+    const generatedFoods: FloatingFood[] = Array.from({ length: 45 }, (_, i) => ({
       id: i,
       emoji: FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)],
       x: Math.random() * 100,
       y: Math.random() * 100,
-      size: Math.random() * 20 + 16,
-      duration: Math.random() * 8 + 10,
-      delay: Math.random() * 10,
-      drift: (Math.random() - 0.5) * 40,
+      size: Math.random() * 28 + 14,
+      duration: Math.random() * 6 + 5,
+      delay: Math.random() * 8,
+      drift: (Math.random() - 0.5) * 120,
     }));
     setFoods(generatedFoods);
   }, []);
