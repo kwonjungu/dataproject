@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Starfield from '@/components/Starfield';
+import BGMPlayer from '@/components/BGMPlayer';
 import GameMap from '@/components/GameMap';
 import BadgeCeremony from '@/components/BadgeCeremony';
 import NPCGuideOverlay, { useNPCGuide } from '@/components/NPCGuide';
@@ -106,6 +107,7 @@ export default function MapPage() {
   return (
     <main className="min-h-screen relative">
       <Starfield />
+      <BGMPlayer />
 
       <button
         onClick={handleLogout}

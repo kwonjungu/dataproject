@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Starfield from '@/components/Starfield';
+import BGMPlayer from '@/components/BGMPlayer';
 import NPCGuideOverlay, { useNPCGuide } from '@/components/NPCGuide';
 import { getDialogueScript } from '@/data/dialogues';
 
@@ -81,11 +82,12 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
       <Starfield />
+      <BGMPlayer />
 
-      <div className="relative z-10 text-center px-6 max-w-lg w-full">
+      <div className="relative z-10 text-center px-6 max-w-lg lg:max-w-2xl xl:max-w-3xl w-full">
         {/* Title */}
         <motion.h1
-          className="text-3xl sm:text-4xl font-title text-gold mb-6"
+          className="text-3xl sm:text-4xl lg:text-6xl xl:text-7xl font-title text-gold mb-6 lg:mb-10"
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.6 }}
@@ -106,8 +108,8 @@ export default function Home() {
                 <span className="text-xs text-cyan-blue bg-cyan-blue/20 px-2 py-0.5 rounded font-ui">RECRUIT</span>
               </div>
 
-              <h2 className="text-2xl sm:text-3xl font-title text-gold mb-2">데이터 수호대</h2>
-              <p className="text-sm text-mute-blue mb-6 font-ui">수호대원 이름을 입력하세요</p>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-title text-gold mb-2">데이터 수호대</h2>
+              <p className="text-sm lg:text-lg text-mute-blue mb-6 font-ui">수호대원 이름을 입력하세요</p>
 
               <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 w-full">
                 <input
@@ -116,13 +118,13 @@ export default function Home() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="수호대원 이름"
                   maxLength={20}
-                  className="w-72 px-6 py-3 rounded-xl bg-dark-indigo border-2 border-mute-blue/30 text-light-gray text-center text-lg font-ui placeholder:text-mute-blue/50 focus:outline-none focus:border-gold transition-all"
+                  className="w-72 lg:w-96 px-6 py-3 lg:py-4 rounded-xl bg-dark-indigo border-2 border-mute-blue/30 text-light-gray text-center text-lg lg:text-xl font-ui placeholder:text-mute-blue/50 focus:outline-none focus:border-gold transition-all"
                   autoFocus
                 />
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-72 py-3 rounded-xl bg-gradient-to-r from-cyan-blue to-electric-purple text-white text-lg font-title hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
+                  className="w-72 lg:w-96 py-3 lg:py-4 rounded-xl bg-gradient-to-r from-cyan-blue to-electric-purple text-white text-lg lg:text-xl font-title hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {loading ? '등록 중...' : '수호대 입대!'}
                 </button>
