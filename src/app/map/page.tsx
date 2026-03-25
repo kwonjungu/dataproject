@@ -109,12 +109,21 @@ export default function MapPage() {
       <Starfield />
       <BGMPlayer />
 
-      <button
-        onClick={handleLogout}
-        className="fixed top-4 right-4 z-40 px-3 py-1.5 rounded-lg bg-dark-indigo border border-mute-blue/30 text-mute-blue text-sm font-ui hover:text-light-gray hover:border-mute-blue transition"
-      >
-        나가기
-      </button>
+      {/* Top buttons */}
+      <div className="fixed top-4 right-4 z-40 flex gap-2">
+        <button
+          onClick={() => router.push('/gallery')}
+          className="px-3 py-1.5 rounded-lg bg-dark-indigo border border-gold/30 text-gold text-sm font-ui hover:bg-gold/10 hover:border-gold transition"
+        >
+          🏆 배지 보관함
+        </button>
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1.5 rounded-lg bg-dark-indigo border border-mute-blue/30 text-mute-blue text-sm font-ui hover:text-light-gray hover:border-mute-blue transition"
+        >
+          나가기
+        </button>
+      </div>
 
       <div className="relative z-10">
         {studentId && (
