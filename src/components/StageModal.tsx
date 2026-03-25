@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StageData } from '@/types';
 import { playSound } from '@/lib/sounds';
-import DialogueBox from './DialogueBox';
+import { missionNPC, npcs } from '@/data/npcs';
 
 interface StageModalProps {
   stage: StageData;
@@ -174,17 +174,24 @@ export default function StageModal({
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: 20 }}
                 >
-                  {stage.npcs[0] && (
-                    <div className="mb-3 sm:mb-4">
-                      <DialogueBox
-                        expression="surprised"
-                        name={stage.npcs[0].name}
-                        role={stage.npcs[0].role}
-                        message={stage.npcs[0].message}
-                        color={stage.color}
-                      />
-                    </div>
-                  )}
+                  {(() => {
+                    const npcId = missionNPC[stage.level];
+                    const npc = npcs[npcId];
+                    return (
+                      <div className="bg-deep-navy/80 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 border border-mute-blue/10">
+                        <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
+                          <span className="text-base sm:text-lg">{npc.fallbackEmoji}</span>
+                          <div>
+                            <p className="text-[10px] sm:text-xs font-bold" style={{ color: npc.borderColor }}>{npc.name}</p>
+                            <p className="text-[9px] sm:text-[10px] text-mute-blue">{npc.role}</p>
+                          </div>
+                        </div>
+                        <p className="text-xs sm:text-sm text-light-gray font-ui leading-relaxed">
+                          &quot;{stage.npcs[0]?.message}&quot;
+                        </p>
+                      </div>
+                    );
+                  })()}
 
                   <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                     <div className="rounded-lg p-2.5 sm:p-3 border border-mute-blue/10 bg-deep-navy/50">

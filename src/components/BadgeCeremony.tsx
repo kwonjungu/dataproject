@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { stages } from '@/data/stages';
 import { playSound } from '@/lib/sounds';
 import ConfettiEffect from './Confetti';
-import DialogueBox from './DialogueBox';
+import { missionNPC, npcs } from '@/data/npcs';
 
 interface BadgeCeremonyProps {
   level: number;
@@ -90,20 +90,26 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
         </p>
       </motion.div>
 
-      {/* Story progression with Dasom celebrate */}
-      {showStory && (
-        <motion.div
-          className="z-10 mt-4 sm:mt-6 mx-3 sm:mx-4 max-w-md"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-        >
-          <DialogueBox
-            expression="celebrate"
-            message={completionText}
-            color={stage.color}
-          />
-        </motion.div>
-      )}
+      {/* Story progression with mission NPC */}
+      {showStory && (() => {
+        const npcId = missionNPC[level];
+        const npc = npcs[npcId];
+        return (
+          <motion.div
+            className="z-10 mt-4 sm:mt-6 mx-3 sm:mx-4 max-w-md bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-3 sm:p-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-lg">{npc.fallbackEmoji}</span>
+              <span className="text-xs font-bold" style={{ color: npc.borderColor }}>{npc.name}</span>
+            </div>
+            <p className="text-sm text-light-gray font-ui leading-relaxed">
+              {completionText}
+            </p>
+          </motion.div>
+        );
+      })()}
 
       {/* Click hint */}
       <motion.p

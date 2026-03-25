@@ -1,73 +1,135 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-
-export type DasomExpression = 'default' | 'surprised' | 'celebrate' | 'worried';
-
-const expressionMap: Record<DasomExpression, string> = {
-  default: '/images/npc-dasom.png',
-  surprised: '/images/npc-dasom-surprised.png',
-  celebrate: '/images/npc-dasom-celebrate.png',
-  worried: '/images/npc-dasom-worried.png',
-};
+import { npcs, NPCId, NPCExpression } from '@/data/npcs';
 
 interface DialogueBoxProps {
-  expression: DasomExpression;
-  name?: string;
-  role?: string;
-  message: string;
-  color?: string;
+  npcId: NPCId;
+  expression: NPCExpression;
+  displayedText: string;
+  isTyping: boolean;
+  lineIndex: number;
+  totalLines: number;
+  onAdvance: () => void;
+  onSkip: () => void;
 }
 
 export default function DialogueBox({
+  npcId,
   expression,
-  name = '다솜 박사',
-  role = '왕국 연구소장',
-  message,
-  color = '#00c9ff',
+  displayedText,
+  isTyping,
+  lineIndex,
+  totalLines,
+  onAdvance,
+  onSkip,
 }: DialogueBoxProps) {
+  const npc = npcs[npcId];
+  const imageSrc = npc.images[expression] || npc.images.default;
+  const [imgError, setImgError] = useState(false);
+
   return (
     <motion.div
-      className="bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-3 sm:p-4 flex gap-3 items-start"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
+      className="fixed bottom-0 left-0 right-0 z-[80] px-3 pb-3 sm:px-6 sm:pb-5"
+      initial={{ y: 200, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: 200, opacity: 0 }}
+      transition={{ type: 'spring', damping: 25, stiffness: 300 }}
     >
-      {/* NPC Portrait */}
-      <div className="shrink-0">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={expression}
-            className="w-14 h-14 sm:w-18 sm:h-18 rounded-xl bg-deep-navy border-2 overflow-hidden relative"
-            style={{ borderColor: color + '40' }}
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Image
-              src={expressionMap[expression]}
-              alt={`${name} - ${expression}`}
-              fill
-              className="object-cover"
-              sizes="72px"
-            />
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      <div
+        className="max-w-2xl mx-auto rounded-2xl border p-3 sm:p-4 cursor-pointer select-none"
+        style={{
+          background: 'rgba(10, 14, 39, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderColor: 'rgba(255,255,255,0.15)',
+        }}
+        onClick={onAdvance}
+      >
+        <div className="flex gap-3 sm:gap-4 items-start">
+          {/* NPC Portrait */}
+          <div className="shrink-0">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${npcId}-${expression}`}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden relative flex items-center justify-center"
+                style={{
+                  border: `3px solid ${npc.borderColor}`,
+                  background: 'rgba(17, 22, 64, 0.8)',
+                  boxShadow: `0 0 15px ${npc.borderColor}30`,
+                }}
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                {imageSrc && !imgError ? (
+                  <Image
+                    src={imageSrc}
+                    alt={npc.name}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    onError={() => setImgError(true)}
+                  />
+                ) : (
+                  <span className="text-3xl sm:text-4xl">{npc.fallbackEmoji}</span>
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-      {/* Dialogue content */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <p className="text-xs sm:text-sm font-bold" style={{ color }}>
-            {name}
-          </p>
-          <p className="text-[9px] sm:text-[10px] text-mute-blue">{role}</p>
+          {/* Dialogue content */}
+          <div className="flex-1 min-w-0">
+            {/* Name label */}
+            <div className="flex items-center gap-2 mb-1.5">
+              <span
+                className="text-[10px] sm:text-xs font-ui font-bold px-2 py-0.5 rounded"
+                style={{
+                  background: npc.borderColor,
+                  color: '#0a0e27',
+                }}
+              >
+                {npc.name}
+              </span>
+              <span className="text-[9px] text-mute-blue">{npc.role}</span>
+            </div>
+
+            {/* Dialogue text */}
+            <p className="text-sm sm:text-base font-ui text-light-gray leading-relaxed min-h-[2.5rem] sm:min-h-[3rem]">
+              {displayedText}
+              {isTyping && (
+                <span className="inline-block w-0.5 h-4 bg-light-gray ml-0.5 animate-pulse" />
+              )}
+            </p>
+
+            {/* Bottom bar */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-[10px] text-mute-blue/60">
+                {lineIndex + 1} / {totalLines}
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onSkip(); }}
+                  className="text-[10px] text-mute-blue/50 hover:text-mute-blue transition"
+                >
+                  건너뛰기
+                </button>
+                {!isTyping && (
+                  <motion.span
+                    className="text-xs"
+                    style={{ color: npc.borderColor }}
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 1, repeat: Infinity }}
+                  >
+                    ▼
+                  </motion.span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-        <p className="text-xs sm:text-sm text-light-gray font-ui leading-relaxed">
-          &quot;{message}&quot;
-        </p>
       </div>
     </motion.div>
   );

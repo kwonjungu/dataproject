@@ -7,21 +7,36 @@ import { Badge } from '@/types';
 import StageNode from './StageNode';
 import StageModal from './StageModal';
 import PathLine from './PathLine';
-import DialogueBox from './DialogueBox';
-import type { DasomExpression } from './DialogueBox';
 
 interface GameMapProps {
   studentId: string;
   studentName: string;
   badges: Badge[];
   onBadgeClaimed: (level: number) => void;
+  onLockedClick: () => void;
+  onMissionDialogue: (level: number) => void;
 }
 
-export default function GameMap({ studentId, studentName, badges, onBadgeClaimed }: GameMapProps) {
+export default function GameMap({
+  studentId,
+  studentName,
+  badges,
+  onBadgeClaimed,
+  onLockedClick,
+  onMissionDialogue,
+}: GameMapProps) {
   const [selectedStage, setSelectedStage] = useState<number | null>(null);
 
   const unlockedLevels = new Set(badges.map((b) => b.level));
   const badgeCount = unlockedLevels.size;
+
+  // Mission locking: M1 always open, M2 needs Lv1, M3 needs Lv2
+  const isMissionAccessible = (level: number) => {
+    if (level === 1) return true;
+    if (level === 2) return unlockedLevels.has(1);
+    if (level === 3) return unlockedLevels.has(2);
+    return false;
+  };
 
   const getRank = () => {
     if (badgeCount === 3) return { title: '간식왕국 수호자', color: '#ffd700' };
@@ -31,8 +46,20 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
   };
   const rank = getRank();
 
+  const handleNodeClick = (level: number) => {
+    if (!isMissionAccessible(level)) {
+      onLockedClick();
+      return;
+    }
+    setSelectedStage(level);
+    // Trigger mission NPC dialogue if not already completed
+    if (!unlockedLevels.has(level)) {
+      onMissionDialogue(level);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center py-6 sm:py-8 px-4 min-h-screen">
+    <div className="flex flex-col items-center py-6 sm:py-8 px-4 min-h-screen pb-28">
       {/* Player status bar */}
       <motion.div
         className="w-full max-w-sm lg:max-w-md bg-dark-indigo/80 border border-mute-blue/20 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6"
@@ -64,7 +91,7 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
 
       {/* Map title */}
       <motion.div
-        className="text-center mb-4 sm:mb-6"
+        className="text-center mb-6 sm:mb-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -72,39 +99,21 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-title text-gold mb-1">
           간식왕국 작전 지도
         </h1>
+        <p className="text-xs sm:text-sm text-mute-blue font-ui">
+          미션을 수행하고 왕국을 구하세요!
+        </p>
       </motion.div>
 
-      {/* Dasom dialogue */}
-      <motion.div
-        className="w-full max-w-sm lg:max-w-md mb-6 sm:mb-8"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-      >
-        <DialogueBox
-          expression={
-            (badgeCount === 3 ? 'celebrate' : badgeCount > 0 ? 'default' : 'default') as DasomExpression
-          }
-          message={
-            badgeCount === 3
-              ? `축하해, ${studentName} 수호대원! 모든 미션을 완료했어! 간식왕국이 평화를 되찾았어!`
-              : badgeCount > 0
-              ? `잘하고 있어, ${studentName} 수호대원! ${3 - badgeCount}개의 미션이 남았어. 계속 화이팅!`
-              : `환영해, ${studentName} 수호대원! 미션 노드를 클릭해서 작전을 확인해봐!`
-          }
-          color={badgeCount === 3 ? '#ffd700' : '#00c9ff'}
-        />
-      </motion.div>
-
-      {/* Map nodes - vertical on mobile, horizontal on lg+ */}
+      {/* Map nodes */}
       <div className="flex flex-col lg:flex-row items-center lg:justify-center lg:gap-0 flex-1">
         {stages.map((stage, index) => (
           <div key={stage.level} className="flex flex-col lg:flex-row items-center">
             <StageNode
               stage={stage}
               isUnlocked={unlockedLevels.has(stage.level)}
+              isAccessible={isMissionAccessible(stage.level)}
               index={index}
-              onClick={() => setSelectedStage(stage.level)}
+              onClick={() => handleNodeClick(stage.level)}
             />
             {index < stages.length - 1 && (
               <PathLine
@@ -126,16 +135,19 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
       >
         {stages.map((stage) => {
           const done = unlockedLevels.has(stage.level);
+          const accessible = isMissionAccessible(stage.level);
           return (
             <div key={stage.level} className="flex flex-col items-center gap-1">
               <div
                 className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-xs sm:text-sm border-2 transition-all ${
                   done
                     ? 'border-gold bg-gold/20 text-gold'
-                    : 'border-mute-blue/20 bg-mute-blue/5 text-mute-blue/40'
+                    : accessible
+                    ? 'border-mute-blue/40 bg-mute-blue/10 text-mute-blue'
+                    : 'border-mute-blue/20 bg-mute-blue/5 text-mute-blue/30'
                 }`}
               >
-                {done ? '★' : '?'}
+                {done ? '★' : accessible ? '!' : '🔒'}
               </div>
               <span className="text-[10px] text-mute-blue">M{stage.level}</span>
             </div>
@@ -144,7 +156,7 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
       </motion.div>
 
       {/* Stage modal */}
-      {selectedStage && (
+      {selectedStage && isMissionAccessible(selectedStage) && (
         <StageModal
           stage={stages.find((s) => s.level === selectedStage)!}
           isOpen={!!selectedStage}
