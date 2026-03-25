@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       .from('students')
       .select('*, badges(*)')
       .eq('name', trimmedName)
-      .single();
+      .maybeSingle();
 
     if (existing) {
       return NextResponse.json({
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
+      console.error('Student creation error:', error);
       return NextResponse.json({ error: '학생 등록에 실패했습니다.' }, { status: 500 });
     }
 
