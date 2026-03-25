@@ -21,7 +21,6 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
   const unlockedLevels = new Set(badges.map((b) => b.level));
   const badgeCount = unlockedLevels.size;
 
-  // Determine player rank
   const getRank = () => {
     if (badgeCount === 3) return { title: '간식왕국 수호자', color: '#ffd700' };
     if (badgeCount === 2) return { title: '데이터 전사', color: '#c850ff' };
@@ -31,27 +30,26 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
   const rank = getRank();
 
   return (
-    <div className="flex flex-col items-center py-8 px-4">
+    <div className="flex flex-col items-center py-6 sm:py-8 px-4 min-h-screen">
       {/* Player status bar */}
       <motion.div
-        className="w-full max-w-sm bg-dark-indigo/80 border border-mute-blue/20 rounded-xl p-4 mb-6"
+        className="w-full max-w-sm lg:max-w-md bg-dark-indigo/80 border border-mute-blue/20 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
       >
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-deep-navy border-2 border-gold/40 flex items-center justify-center text-2xl">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-deep-navy border-2 border-gold/40 flex items-center justify-center text-xl sm:text-2xl shrink-0">
             🛡️
           </div>
-          <div className="flex-1">
-            <p className="text-light-gray font-title text-sm">{studentName}</p>
+          <div className="flex-1 min-w-0">
+            <p className="text-light-gray font-title text-sm truncate">{studentName}</p>
             <p className="text-xs font-ui" style={{ color: rank.color }}>{rank.title}</p>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <p className="text-xs text-mute-blue">배지</p>
             <p className="text-lg font-title text-gold">{badgeCount}/3</p>
           </div>
         </div>
-        {/* XP bar */}
         <div className="mt-2 h-1.5 bg-deep-navy rounded-full overflow-hidden">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-cyan-blue via-fire-orange to-electric-purple"
@@ -64,25 +62,25 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
 
       {/* Map title */}
       <motion.div
-        className="text-center mb-8"
+        className="text-center mb-6 sm:mb-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
       >
-        <h1 className="text-2xl font-title text-gold mb-1">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-title text-gold mb-1">
           간식왕국 작전 지도
         </h1>
-        <p className="text-xs text-mute-blue font-ui">
+        <p className="text-xs sm:text-sm text-mute-blue font-ui">
           {badgeCount === 3
             ? '모든 미션 완료! 왕국이 평화를 되찾았습니다!'
             : '미션을 수행하고 왕국을 구하세요!'}
         </p>
       </motion.div>
 
-      {/* Map nodes */}
-      <div className="flex flex-col items-center">
+      {/* Map nodes - vertical on mobile, horizontal on lg+ */}
+      <div className="flex flex-col lg:flex-row items-center lg:justify-center lg:gap-0 flex-1">
         {stages.map((stage, index) => (
-          <div key={stage.level}>
+          <div key={stage.level} className="flex flex-col lg:flex-row items-center">
             <StageNode
               stage={stage}
               isUnlocked={unlockedLevels.has(stage.level)}
@@ -102,7 +100,7 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
 
       {/* Mission progress */}
       <motion.div
-        className="mt-8 flex gap-3"
+        className="mt-6 sm:mt-8 flex gap-3"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1 }}
@@ -112,7 +110,7 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
           return (
             <div key={stage.level} className="flex flex-col items-center gap-1">
               <div
-                className={`w-9 h-9 rounded-lg flex items-center justify-center text-sm border-2 transition-all ${
+                className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-xs sm:text-sm border-2 transition-all ${
                   done
                     ? 'border-gold bg-gold/20 text-gold'
                     : 'border-mute-blue/20 bg-mute-blue/5 text-mute-blue/40'

@@ -39,7 +39,7 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
 
       {/* Badge animation */}
       <motion.div
-        className="text-8xl mb-4"
+        className="text-6xl sm:text-8xl mb-4"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: [0, 1.3, 1], rotate: [-180, 20, 0] }}
         transition={{ duration: 1, ease: 'easeOut' }}
@@ -49,7 +49,7 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
 
       {/* Glow ring */}
       <motion.div
-        className="absolute w-40 h-40 rounded-full"
+        className="absolute w-32 h-32 sm:w-40 sm:h-40 rounded-full"
         style={{
           border: `3px solid ${stage.color}`,
           boxShadow: `0 0 40px ${stage.color}60, inset 0 0 40px ${stage.color}20`,
@@ -73,15 +73,15 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
           {stage.missionTag} COMPLETE!
         </span>
         <h2
-          className="text-3xl font-title mt-3 mb-2"
+          className="text-2xl sm:text-3xl font-title mt-3 mb-2"
           style={{ color: stage.color }}
         >
           배지 획득!
         </h2>
-        <p className="text-lg font-ui text-light-gray">
+        <p className="text-base sm:text-lg font-ui text-light-gray">
           {studentName} 수호대원
         </p>
-        <p className="text-base font-ui mt-1" style={{ color: stage.color }}>
+        <p className="text-sm sm:text-base font-ui mt-1" style={{ color: stage.color }}>
           Lv{stage.level}. {stage.title} 배지를 획득!
         </p>
         <p className="text-xs text-gold mt-2 font-ui">
@@ -92,7 +92,7 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
       {/* Story progression */}
       {showStory && (
         <motion.div
-          className="z-10 mt-6 mx-4 max-w-md bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-4"
+          className="z-10 mt-4 sm:mt-6 mx-3 sm:mx-4 max-w-md bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-3 sm:p-4"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >

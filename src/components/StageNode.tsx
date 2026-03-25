@@ -27,7 +27,7 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
     >
       {/* Mission tag */}
       <motion.span
-        className="text-[10px] font-bold tracking-widest mb-2 px-2 py-0.5 rounded"
+        className="text-[9px] sm:text-[10px] font-bold tracking-widest mb-1.5 sm:mb-2 px-2 py-0.5 rounded"
         style={{
           background: isUnlocked ? stage.color + '25' : '#333355' + '40',
           color: isUnlocked ? stage.color : '#555577',
@@ -41,7 +41,7 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
 
       {/* Node circle */}
       <motion.div
-        className={`relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 ${
+        className={`relative w-20 h-20 sm:w-28 sm:h-28 lg:w-32 lg:h-32 rounded-full flex items-center justify-center transition-all duration-300 ${
           isUnlocked ? 'node-glow-hover' : 'node-locked'
         }`}
         style={{
@@ -55,14 +55,14 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
         whileTap={{ scale: 0.95 }}
       >
         {/* Badge emoji */}
-        <span className={`text-4xl ${isUnlocked ? '' : 'opacity-40'}`}>
+        <span className={`text-3xl sm:text-4xl lg:text-5xl ${isUnlocked ? '' : 'opacity-40'}`}>
           {stage.emoji}
         </span>
 
         {/* Lock overlay */}
         {!isUnlocked && (
           <div className="absolute inset-0 rounded-full flex items-center justify-center bg-black/30">
-            <span className="text-2xl">🔒</span>
+            <span className="text-xl sm:text-2xl">🔒</span>
           </div>
         )}
 
@@ -87,7 +87,7 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
 
         {/* Complete check */}
         {isUnlocked && (
-          <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-green-500 border-2 border-deep-navy flex items-center justify-center text-white text-xs font-bold">
+          <div className="absolute -top-1 -right-1 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-green-500 border-2 border-deep-navy flex items-center justify-center text-white text-[10px] sm:text-xs font-bold">
             ✓
           </div>
         )}
@@ -95,19 +95,19 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
 
       {/* Level label */}
       <motion.div
-        className="mt-2 text-center"
+        className="mt-1.5 sm:mt-2 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: index * 0.3 + 0.3 }}
       >
         <p
-          className="text-xs font-title"
+          className="text-[11px] sm:text-xs lg:text-sm font-title"
           style={{ color: isUnlocked ? stage.color : '#555577' }}
         >
           Lv{stage.level}. {stage.title}
         </p>
         <p
-          className="text-[11px] font-ui mt-0.5 max-w-[160px]"
+          className="text-[10px] sm:text-[11px] font-ui mt-0.5 max-w-[130px] sm:max-w-[160px] lg:max-w-[180px]"
           style={{ color: isUnlocked ? '#e8eaf6' : '#555577' }}
         >
           {stage.missionTitle}
