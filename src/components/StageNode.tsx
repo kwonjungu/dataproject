@@ -25,6 +25,20 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
       transition={{ delay: index * 0.3, duration: 0.6 }}
       onClick={handleClick}
     >
+      {/* Mission tag */}
+      <motion.span
+        className="text-[10px] font-bold tracking-widest mb-2 px-2 py-0.5 rounded"
+        style={{
+          background: isUnlocked ? stage.color + '25' : '#333355' + '40',
+          color: isUnlocked ? stage.color : '#555577',
+        }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: index * 0.3 + 0.2 }}
+      >
+        {stage.missionTag}
+      </motion.span>
+
       {/* Node circle */}
       <motion.div
         className={`relative w-28 h-28 rounded-full flex items-center justify-center transition-all duration-300 ${
@@ -37,7 +51,7 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
             : 'radial-gradient(circle, #1a1a3a 0%, #0d0d2a 70%)',
           border: `3px solid ${isUnlocked ? stage.color : '#333355'}`,
         } as React.CSSProperties}
-        whileHover={{ scale: isUnlocked ? 1.1 : 1.02 }}
+        whileHover={{ scale: isUnlocked ? 1.1 : 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
         {/* Badge emoji */}
@@ -70,26 +84,33 @@ export default function StageNode({ stage, isUnlocked, index, onClick }: StageNo
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
+
+        {/* Complete check */}
+        {isUnlocked && (
+          <div className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-green-500 border-2 border-deep-navy flex items-center justify-center text-white text-xs font-bold">
+            ✓
+          </div>
+        )}
       </motion.div>
 
       {/* Level label */}
       <motion.div
-        className="mt-3 text-center"
+        className="mt-2 text-center"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: index * 0.3 + 0.3 }}
       >
         <p
-          className="text-lg font-title"
+          className="text-xs font-title"
           style={{ color: isUnlocked ? stage.color : '#555577' }}
         >
-          Lv{stage.level}
+          Lv{stage.level}. {stage.title}
         </p>
         <p
-          className="text-sm font-ui"
+          className="text-[11px] font-ui mt-0.5 max-w-[160px]"
           style={{ color: isUnlocked ? '#e8eaf6' : '#555577' }}
         >
-          {stage.title}
+          {stage.missionTitle}
         </p>
       </motion.div>
     </motion.div>

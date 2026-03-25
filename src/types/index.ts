@@ -23,6 +23,19 @@ export interface StudentWithBadges extends Student {
   badges: Badge[];
 }
 
+export interface NPC {
+  name: string;
+  role: string;
+  message: string;
+}
+
+export interface MiniQuiz {
+  question: string;
+  choices: string[];
+  correctIndex: number;
+  hint: string;
+}
+
 export interface StageData {
   level: number;
   title: string;
@@ -34,4 +47,13 @@ export interface StageData {
   activities: string[];
   story: string;
   color: string;
+  // Game narrative fields
+  missionTag: string;
+  missionTitle: string;
+  missionBriefing: string;
+  missionObjective: string;
+  completionStory: string;
+  npcs: NPC[];
+  reward: string;
+  quizzes: MiniQuiz[];
 }

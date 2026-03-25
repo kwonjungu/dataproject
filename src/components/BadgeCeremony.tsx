@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { stages } from '@/data/stages';
 import { playSound } from '@/lib/sounds';
@@ -14,11 +14,18 @@ interface BadgeCeremonyProps {
 
 export default function BadgeCeremony({ level, studentName, onComplete }: BadgeCeremonyProps) {
   const stage = stages.find((s) => s.level === level)!;
+  const [showStory, setShowStory] = useState(false);
+
+  const completionText = stage.completionStory.replace('{name}', studentName);
 
   useEffect(() => {
     playSound('fanfare');
-    const timer = setTimeout(onComplete, 8000);
-    return () => clearTimeout(timer);
+    const storyTimer = setTimeout(() => setShowStory(true), 2500);
+    const autoClose = setTimeout(onComplete, 12000);
+    return () => {
+      clearTimeout(storyTimer);
+      clearTimeout(autoClose);
+    };
   }, [onComplete]);
 
   return (
@@ -32,7 +39,7 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
 
       {/* Badge animation */}
       <motion.div
-        className="text-8xl mb-6"
+        className="text-8xl mb-4"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: [0, 1.3, 1], rotate: [-180, 20, 0] }}
         transition={{ duration: 1, ease: 'easeOut' }}
@@ -52,35 +59,60 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
         transition={{ duration: 1.2, ease: 'easeOut' }}
       />
 
-      {/* Text */}
+      {/* Title text */}
       <motion.div
-        className="text-center mt-8 z-10"
+        className="text-center mt-6 z-10"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.8, duration: 0.5 }}
       >
+        <span
+          className="text-xs font-bold tracking-widest px-3 py-1 rounded"
+          style={{ background: stage.color + '30', color: stage.color }}
+        >
+          {stage.missionTag} COMPLETE!
+        </span>
         <h2
-          className="text-3xl font-title mb-3"
+          className="text-3xl font-title mt-3 mb-2"
           style={{ color: stage.color }}
         >
           배지 획득!
         </h2>
-        <p className="text-xl font-ui text-light-gray mb-2">
-          {studentName} 학생,
+        <p className="text-lg font-ui text-light-gray">
+          {studentName} 수호대원
         </p>
-        <p className="text-lg font-ui" style={{ color: stage.color }}>
-          Lv{stage.level}. {stage.title} 배지를 획득했습니다!
+        <p className="text-base font-ui mt-1" style={{ color: stage.color }}>
+          Lv{stage.level}. {stage.title} 배지를 획득!
+        </p>
+        <p className="text-xs text-gold mt-2 font-ui">
+          {stage.reward}
         </p>
       </motion.div>
 
+      {/* Story progression */}
+      {showStory && (
+        <motion.div
+          className="z-10 mt-6 mx-4 max-w-md bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] text-gold bg-gold/20 px-2 py-0.5 rounded font-bold tracking-wider">STORY</span>
+          </div>
+          <p className="text-sm text-light-gray font-ui leading-relaxed">
+            {completionText}
+          </p>
+        </motion.div>
+      )}
+
       {/* Click hint */}
       <motion.p
-        className="absolute bottom-10 text-mute-blue text-sm"
+        className="absolute bottom-8 text-mute-blue text-xs"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 2 }}
+        transition={{ delay: 3 }}
       >
-        화면을 클릭하면 돌아갑니다
+        화면을 클릭하면 작전 지도로 돌아갑니다
       </motion.p>
     </motion.div>
   );
