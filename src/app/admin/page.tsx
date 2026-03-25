@@ -95,16 +95,35 @@ export default function AdminPage() {
     fetchStudents();
   };
 
+  const [savedLevel, setSavedLevel] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string>('');
+
   const saveAuthKey = async (level: number) => {
     const keyValue = keyInputs[level];
     if (!keyValue?.trim()) return;
 
-    await fetch('/api/admin/auth-keys', {
-      method: 'POST',
-      headers: headers(),
-      body: JSON.stringify({ level, keyValue: keyValue.trim() }),
-    });
-    fetchAuthKeys();
+    setSavedLevel(null);
+    setSaveError('');
+
+    try {
+      const res = await fetch('/api/admin/auth-keys', {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify({ level, keyValue: keyValue.trim() }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setSaveError(data.error || '저장 실패');
+        return;
+      }
+
+      setSavedLevel(level);
+      fetchAuthKeys();
+      setTimeout(() => setSavedLevel(null), 2000);
+    } catch {
+      setSaveError('서버 연결 오류');
+    }
   };
 
   // Login screen
@@ -311,11 +330,14 @@ export default function AdminPage() {
                     <button
                       onClick={() => saveAuthKey(stage.level)}
                       className="px-5 py-2 rounded-lg text-white font-ui hover:brightness-110 transition"
-                      style={{ background: stage.color }}
+                      style={{ background: savedLevel === stage.level ? '#22c55e' : stage.color }}
                     >
-                      저장
+                      {savedLevel === stage.level ? '저장됨!' : '저장'}
                     </button>
                   </div>
+                  {saveError && (
+                    <p className="mt-2 text-xs text-red-400">{saveError}</p>
+                  )}
                   {existing && (
                     <p className="mt-2 text-xs text-mute-blue">
                       마지막 수정: {new Date(existing.updated_at).toLocaleString('ko-KR')}
