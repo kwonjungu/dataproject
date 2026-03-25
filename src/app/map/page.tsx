@@ -6,6 +6,7 @@ import Starfield from '@/components/Starfield';
 import BGMPlayer from '@/components/BGMPlayer';
 import GameMap from '@/components/GameMap';
 import BadgeCeremony from '@/components/BadgeCeremony';
+import EndingSequence from '@/components/EndingSequence';
 import NPCGuideOverlay, { useNPCGuide } from '@/components/NPCGuide';
 import { getDialogueScript } from '@/data/dialogues';
 import { Badge } from '@/types';
@@ -16,6 +17,7 @@ export default function MapPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
   const [ceremonyLevel, setCeremonyLevel] = useState<number | null>(null);
+  const [showEnding, setShowEnding] = useState(false);
   const router = useRouter();
 
   const npcGuide = useNPCGuide();
@@ -39,7 +41,6 @@ export default function MapPage() {
         setBadges(b);
         setLoading(false);
 
-        // Trigger appropriate NPC dialogue
         const isFirst = localStorage.getItem('firstVisit') === 'true';
         if (isFirst) {
           localStorage.removeItem('firstVisit');
@@ -70,13 +71,25 @@ export default function MapPage() {
   }, [studentId]);
 
   const handleCeremonyComplete = useCallback(() => {
+    const completedLevel = ceremonyLevel;
     setCeremonyLevel(null);
-    // Trigger badge NPC dialogue
+
     const name = localStorage.getItem('studentName') || '';
-    const key = `mission${ceremonyLevel}Badge` as 'mission1Badge' | 'mission2Badge' | 'mission3Badge';
-    setTimeout(() => {
-      npcGuide.trigger(getDialogueScript(key, name));
-    }, 500);
+    const key = `mission${completedLevel}Badge` as 'mission1Badge' | 'mission2Badge' | 'mission3Badge';
+
+    // If Mission 3 was just completed → trigger ending after NPC dialogue
+    if (completedLevel === 3) {
+      const endingGuide = getDialogueScript(key, name);
+      npcGuide.trigger(endingGuide);
+      // Start ending after a short delay to let dialogue begin
+      setTimeout(() => {
+        setShowEnding(true);
+      }, endingGuide.length * 3000 + 1000);
+    } else {
+      setTimeout(() => {
+        npcGuide.trigger(getDialogueScript(key, name));
+      }, 500);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ceremonyLevel]);
 
@@ -143,6 +156,17 @@ export default function MapPage() {
           level={ceremonyLevel}
           studentName={studentName}
           onComplete={handleCeremonyComplete}
+        />
+      )}
+
+      {/* Ending sequence overlay - triggered after M3 badge */}
+      {showEnding && (
+        <EndingSequence
+          studentName={studentName}
+          onComplete={() => {
+            setShowEnding(false);
+            router.push('/gallery');
+          }}
         />
       )}
 
