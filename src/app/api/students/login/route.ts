@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     const trimmedName = name.trim();
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     // Check if student exists
     const { data: existing } = await supabase

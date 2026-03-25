@@ -13,7 +13,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '유효하지 않은 레벨입니다.' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     // Verify auth key
     const { data: authKey } = await supabase

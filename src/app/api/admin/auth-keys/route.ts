@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from('auth_keys')
       .select('*')
@@ -44,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '유효하지 않은 입력입니다.' }, { status: 400 });
     }
 
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     const { data, error } = await supabase
       .from('auth_keys')

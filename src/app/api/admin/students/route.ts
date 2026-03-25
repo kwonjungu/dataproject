@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const { data, error } = await supabase
       .from('students')
       .select('*, badges(*)')

@@ -20,7 +20,7 @@ export async function DELETE(
 
   try {
     const { id } = await params;
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     const { error } = await supabase
       .from('students')
