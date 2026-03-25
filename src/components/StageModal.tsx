@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StageData } from '@/types';
 import { playSound } from '@/lib/sounds';
+import DialogueBox from './DialogueBox';
 
 interface StageModalProps {
   stage: StageData;
@@ -174,17 +175,14 @@ export default function StageModal({
                   exit={{ opacity: 0, x: 20 }}
                 >
                   {stage.npcs[0] && (
-                    <div className="bg-deep-navy/80 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 border border-mute-blue/10">
-                      <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-                        <span className="text-base sm:text-lg">🧑‍🔬</span>
-                        <div>
-                          <p className="text-[10px] sm:text-xs font-bold" style={{ color: stage.color }}>{stage.npcs[0].name}</p>
-                          <p className="text-[9px] sm:text-[10px] text-mute-blue">{stage.npcs[0].role}</p>
-                        </div>
-                      </div>
-                      <p className="text-xs sm:text-sm text-light-gray font-ui leading-relaxed">
-                        &quot;{stage.npcs[0].message}&quot;
-                      </p>
+                    <div className="mb-3 sm:mb-4">
+                      <DialogueBox
+                        expression="surprised"
+                        name={stage.npcs[0].name}
+                        role={stage.npcs[0].role}
+                        message={stage.npcs[0].message}
+                        color={stage.color}
+                      />
                     </div>
                   )}
 

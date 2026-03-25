@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import Starfield from '@/components/Starfield';
+import DialogueBox from '@/components/DialogueBox';
 import { worldSetting } from '@/data/stages';
 
 export default function Home() {
@@ -102,6 +103,15 @@ export default function Home() {
                 {worldSetting.title}
               </motion.h1>
 
+              {/* Dasom worried dialogue */}
+              <div className="w-full mb-4">
+                <DialogueBox
+                  expression="worried"
+                  message="큰일이야! 간식왕국에 정크 바이러스가 퍼지고 있어... 빨리 수호대원을 모집해야 해!"
+                  color="#ff6b35"
+                />
+              </div>
+
               {/* Story text - typewriter style */}
               <div className="bg-dark-indigo/80 border border-mute-blue/20 rounded-xl p-6 mb-8 min-h-[200px] w-full text-left">
                 <div className="flex items-center gap-2 mb-3">
@@ -157,14 +167,14 @@ export default function Home() {
                 간식왕국이 당신을 기다리고 있습니다
               </p>
 
-              {/* Character badge */}
-              <div className="w-24 h-24 rounded-full bg-dark-indigo border-2 border-gold/50 flex items-center justify-center text-5xl mb-6 mx-auto">
-                🛡️
+              {/* Dasom default dialogue */}
+              <div className="w-full mb-6">
+                <DialogueBox
+                  expression="default"
+                  message={worldSetting.recruitMessage}
+                  color="#00c9ff"
+                />
               </div>
-
-              <p className="text-sm text-light-gray mb-6 font-ui">
-                {worldSetting.recruitMessage}
-              </p>
 
               <form onSubmit={handleSubmit} className="flex flex-col items-center gap-4 w-full">
                 <input

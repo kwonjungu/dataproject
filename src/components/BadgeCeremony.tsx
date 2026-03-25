@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { stages } from '@/data/stages';
 import { playSound } from '@/lib/sounds';
 import ConfettiEffect from './Confetti';
+import DialogueBox from './DialogueBox';
 
 interface BadgeCeremonyProps {
   level: number;
@@ -89,19 +90,18 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
         </p>
       </motion.div>
 
-      {/* Story progression */}
+      {/* Story progression with Dasom celebrate */}
       {showStory && (
         <motion.div
-          className="z-10 mt-4 sm:mt-6 mx-3 sm:mx-4 max-w-md bg-dark-indigo/90 border border-mute-blue/20 rounded-xl p-3 sm:p-4"
+          className="z-10 mt-4 sm:mt-6 mx-3 sm:mx-4 max-w-md"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[10px] text-gold bg-gold/20 px-2 py-0.5 rounded font-bold tracking-wider">STORY</span>
-          </div>
-          <p className="text-sm text-light-gray font-ui leading-relaxed">
-            {completionText}
-          </p>
+          <DialogueBox
+            expression="celebrate"
+            message={completionText}
+            color={stage.color}
+          />
         </motion.div>
       )}
 

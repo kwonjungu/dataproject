@@ -7,6 +7,8 @@ import { Badge } from '@/types';
 import StageNode from './StageNode';
 import StageModal from './StageModal';
 import PathLine from './PathLine';
+import DialogueBox from './DialogueBox';
+import type { DasomExpression } from './DialogueBox';
 
 interface GameMapProps {
   studentId: string;
@@ -62,7 +64,7 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
 
       {/* Map title */}
       <motion.div
-        className="text-center mb-6 sm:mb-8"
+        className="text-center mb-4 sm:mb-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.3 }}
@@ -70,11 +72,28 @@ export default function GameMap({ studentId, studentName, badges, onBadgeClaimed
         <h1 className="text-xl sm:text-2xl lg:text-3xl font-title text-gold mb-1">
           간식왕국 작전 지도
         </h1>
-        <p className="text-xs sm:text-sm text-mute-blue font-ui">
-          {badgeCount === 3
-            ? '모든 미션 완료! 왕국이 평화를 되찾았습니다!'
-            : '미션을 수행하고 왕국을 구하세요!'}
-        </p>
+      </motion.div>
+
+      {/* Dasom dialogue */}
+      <motion.div
+        className="w-full max-w-sm lg:max-w-md mb-6 sm:mb-8"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <DialogueBox
+          expression={
+            (badgeCount === 3 ? 'celebrate' : badgeCount > 0 ? 'default' : 'default') as DasomExpression
+          }
+          message={
+            badgeCount === 3
+              ? `축하해, ${studentName} 수호대원! 모든 미션을 완료했어! 간식왕국이 평화를 되찾았어!`
+              : badgeCount > 0
+              ? `잘하고 있어, ${studentName} 수호대원! ${3 - badgeCount}개의 미션이 남았어. 계속 화이팅!`
+              : `환영해, ${studentName} 수호대원! 미션 노드를 클릭해서 작전을 확인해봐!`
+          }
+          color={badgeCount === 3 ? '#ffd700' : '#00c9ff'}
+        />
       </motion.div>
 
       {/* Map nodes - vertical on mobile, horizontal on lg+ */}
