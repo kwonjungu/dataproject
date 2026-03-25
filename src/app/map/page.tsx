@@ -125,6 +125,12 @@ export default function MapPage() {
       {/* Top buttons */}
       <div className="fixed top-4 right-4 z-40 flex gap-2">
         <button
+          onClick={() => router.push('/minigames')}
+          className="px-3 py-1.5 rounded-lg bg-dark-indigo border border-electric-purple/30 text-electric-purple text-sm font-ui hover:bg-electric-purple/10 hover:border-electric-purple transition"
+        >
+          🎮 미니게임
+        </button>
+        <button
           onClick={() => router.push('/gallery')}
           className="px-3 py-1.5 rounded-lg bg-dark-indigo border border-gold/30 text-gold text-sm font-ui hover:bg-gold/10 hover:border-gold transition"
         >
