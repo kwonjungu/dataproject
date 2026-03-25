@@ -12,7 +12,7 @@ export const worldSetting = {
     '데이터의 힘으로 바이러스를 물리치자!',
   ],
   recruitMessage: '수호대원 등록을 위해 이름을 입력하세요',
-  buttonText: '수호대 입대!',
+  buttonText: '수호대 활동 시작!',
 };
 
 export const stages: StageData[] = [

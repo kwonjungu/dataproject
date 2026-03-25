@@ -105,7 +105,7 @@ export default function Home() {
               transition={{ duration: 0.5 }}
             >
               <div className="mb-4">
-                <span className="text-xs text-cyan-blue bg-cyan-blue/20 px-2 py-0.5 rounded font-ui">RECRUIT</span>
+                <span className="text-xs text-cyan-blue bg-cyan-blue/20 px-2 py-0.5 rounded font-ui">수호대 모집</span>
               </div>
 
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-title text-gold mb-2">데이터 수호대</h2>
@@ -126,7 +126,7 @@ export default function Home() {
                   disabled={loading}
                   className="w-72 lg:w-96 py-3 lg:py-4 rounded-xl bg-gradient-to-r from-cyan-blue to-electric-purple text-white text-lg lg:text-xl font-title hover:brightness-110 active:scale-95 transition-all disabled:opacity-50"
                 >
-                  {loading ? '등록 중...' : '수호대 입대!'}
+                  {loading ? '등록 중...' : '수호대 활동 시작!'}
                 </button>
                 {error && (
                   <motion.p className="text-red-400 text-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>

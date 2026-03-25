@@ -71,7 +71,7 @@ export default function BadgeCeremony({ level, studentName, onComplete }: BadgeC
           className="text-xs font-bold tracking-widest px-3 py-1 rounded"
           style={{ background: stage.color + '30', color: stage.color }}
         >
-          {stage.missionTag} COMPLETE!
+          {stage.missionTag} 클리어!
         </span>
         <h2
           className="text-2xl sm:text-3xl font-title mt-3 mb-2"

@@ -195,17 +195,17 @@ export default function StageModal({
 
                   <div className="space-y-2 sm:space-y-3 text-xs sm:text-sm">
                     <div className="rounded-lg p-2.5 sm:p-3 border border-mute-blue/10 bg-deep-navy/50">
-                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1">BRIEFING</p>
+                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1">작전 설명</p>
                       <p className="text-light-gray leading-relaxed">{stage.missionBriefing}</p>
                     </div>
 
                     <div className="rounded-lg p-2.5 sm:p-3 border border-mute-blue/10 bg-deep-navy/50">
-                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1">OBJECTIVE</p>
+                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1">미션 목표</p>
                       <p className="text-light-gray">{stage.missionObjective}</p>
                     </div>
 
                     <div className="rounded-lg p-2.5 sm:p-3 border border-mute-blue/10 bg-deep-navy/50">
-                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1.5 sm:mb-2">ACTIVITIES</p>
+                      <p className="text-[9px] sm:text-[10px] text-mute-blue font-bold tracking-wider mb-1.5 sm:mb-2">활동 내용</p>
                       <ul className="space-y-1">
                         {stage.activities.map((act, i) => (
                           <li key={i} className="text-light-gray flex gap-2 text-[11px] sm:text-xs">
@@ -220,7 +220,7 @@ export default function StageModal({
                       className="rounded-lg p-2.5 sm:p-3 text-center italic text-xs sm:text-sm"
                       style={{ background: stage.color + '10', color: stage.color }}
                     >
-                      REWARD: {stage.reward}
+                      보상: {stage.reward}
                     </div>
                   </div>
 
@@ -240,7 +240,7 @@ export default function StageModal({
                         className="inline-block rounded-full px-4 py-2 text-xs sm:text-sm font-bold"
                         style={{ background: stage.color + '20', color: stage.color }}
                       >
-                        MISSION COMPLETE!
+                        미션 클리어!
                       </span>
                     </div>
                   )}
