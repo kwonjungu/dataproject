@@ -20,7 +20,9 @@ let itemId = 0;
 export default function DungeonGame({ onBack }: DungeonGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ w: 640, h: 480 });
+  // Fixed internal resolution, CSS handles scaling
+  const CANVAS_W = 800;
+  const CANVAS_H = 600;
   const [phase, setPhase] = useState<GamePhase>('select');
   const [selectedChar, setSelectedChar] = useState<CharacterId | null>(null);
   const [player, setPlayer] = useState<PlayerState | null>(null);
@@ -82,19 +84,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     setPhase('playing');
   }, []);
 
-  // Canvas resize
-  useEffect(() => {
-    const resize = () => {
-      const el = containerRef.current;
-      if (!el) return;
-      const w = Math.min(el.clientWidth, window.innerWidth - 16);
-      const h = Math.min(window.innerHeight - 160, w * 0.75);
-      setCanvasSize({ w: Math.floor(w), h: Math.floor(Math.max(h, 300)) });
-    };
-    resize();
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
-  }, [phase]);
+  // No canvas resize needed - fixed internal resolution, CSS scales it
 
   // Input handlers
   useEffect(() => {
@@ -524,7 +514,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
     animId = requestAnimationFrame(loop);
     return () => { gameRef.current.running = false; cancelAnimationFrame(animId); };
-  }, [phase, selectedChar, canvasSize]);
+  }, [phase, selectedChar]);
 
   // Touch joystick handler (use start pos as origin)
   const touchStart = useRef<{ x: number; y: number } | null>(null);
@@ -647,10 +637,10 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
             <canvas
               ref={canvasRef}
-              width={canvasSize.w}
-              height={canvasSize.h}
-              className="rounded-xl border border-mute-blue/20 touch-none"
-              style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '100%' }}
+              width={CANVAS_W}
+              height={CANVAS_H}
+              className="rounded-xl border border-mute-blue/20 touch-none w-full"
+              style={{ aspectRatio: `${CANVAS_W}/${CANVAS_H}`, maxHeight: 'calc(100vh - 200px)' }}
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
