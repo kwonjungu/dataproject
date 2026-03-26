@@ -121,14 +121,23 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    let stopped = false;
     gameRef.current.running = true;
     let animId: number;
 
+    // Draw initial frame immediately so canvas isn't blank
+    ctx.fillStyle = '#0a0e27';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#e8eaf6';
+    ctx.font = '20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('게임 로딩 중...', canvas.width / 2, canvas.height / 2);
+
     const loop = () => {
-      if (!gameRef.current.running) return;
+      if (stopped) return;
       const g = gameRef.current;
       const p = g.player;
-      if (!p) return;
+      if (!p) { animId = requestAnimationFrame(loop); return; }
 
       const W = canvas.width;
       const H = canvas.height;
@@ -513,7 +522,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     };
 
     animId = requestAnimationFrame(loop);
-    return () => { gameRef.current.running = false; cancelAnimationFrame(animId); };
+    return () => { stopped = true; gameRef.current.running = false; cancelAnimationFrame(animId); };
   }, [phase, selectedChar]);
 
   // Touch joystick handler (use start pos as origin)
