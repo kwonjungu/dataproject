@@ -31,6 +31,8 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
   const [finalScore, setFinalScore] = useState(0);
   const [bossHp, setBossHp] = useState(0);
   const [bossMaxHp, setBossMaxHp] = useState(0);
+  const [waveText, setWaveText] = useState('');
+  const [scorePopups, setScorePopups] = useState<{ id: number; text: string; color: string }[]>([]);
 
   // Game state refs (mutable for game loop)
   const gameRef = useRef({
@@ -117,20 +119,32 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
   }, []);
 
-  // Timer
+  // Timer + wave alerts
   useEffect(() => {
     if (phase !== 'playing' && phase !== 'boss') return;
     const t = setInterval(() => {
       gameRef.current.time -= 1;
-      setTimeLeft(gameRef.current.time);
-      if (gameRef.current.time <= 0) {
+      const time = gameRef.current.time;
+      setTimeLeft(time);
+      if (time <= 0) {
         gameRef.current.running = false;
         setPhase('clear');
         setFinalScore(gameRef.current.player?.score || 0);
       }
+      // Wave alerts
+      if (time === 120) { setWaveText('WAVE 2 — 스피드 바이러스 출현!'); setTimeout(() => setWaveText(''), 2500); }
+      if (time === 60) { setWaveText('WAVE 3 — 정크킹 등장!'); setTimeout(() => setWaveText(''), 2500); }
     }, 1000);
     return () => clearInterval(t);
   }, [phase]);
+
+  // Score popup helper
+  let popupId = useRef(0);
+  const showPopup = useCallback((text: string, color: string) => {
+    const id = popupId.current++;
+    setScorePopups(prev => [...prev, { id, text, color }]);
+    setTimeout(() => setScorePopups(prev => prev.filter(p => p.id !== id)), 800);
+  }, []);
 
   // Draw static scene for ready phase
   useEffect(() => {
@@ -321,9 +335,11 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
               });
             }
             if (e.hp <= 0) {
-              p.score += e.type === 'boss' ? 100 : e.type === 'tank' ? 20 : 10;
+              const pts = e.type === 'boss' ? 100 : e.type === 'tank' ? 20 : 10;
+              p.score += pts;
               p.kills += 1;
               p.exp += e.type === 'boss' ? 50 : e.type === 'tank' ? 15 : 8;
+              showPopup(`+${pts}`, e.type === 'boss' ? '#ffd700' : '#22c55e');
               // Death particles
               for (let k = 0; k < 10; k++) {
                 g.particles.push({
@@ -367,9 +383,11 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
       g.items = g.items.filter((item) => {
         if (Math.hypot(item.x - p.x, item.y - p.y) < item.radius + 16) {
           if (item.healthy) {
+            const pts = item.type === 'rare' ? 30 : 10;
             p.exp += item.type === 'rare' ? 25 : 8;
-            p.score += item.type === 'rare' ? 30 : 10;
+            p.score += pts;
             p.collected += 1;
+            showPopup(`+${pts} ${item.emoji}`, item.type === 'rare' ? '#ffd700' : '#22c55e');
             for (let k = 0; k < 6; k++) {
               g.particles.push({
                 x: item.x, y: item.y,
@@ -380,6 +398,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
           } else {
             p.score -= 5;
             p.speed *= 0.7;
+            showPopup(`-5 정크!`, '#ef4444');
             setTimeout(() => { if (g.player && selectedChar) g.player.speed = CHARACTERS[selectedChar].baseSpeed * (1 + (p.level - 1) * 0.05); }, 2000);
             for (let k = 0; k < 4; k++) {
               g.particles.push({
@@ -399,7 +418,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
         p.exp -= p.expToNext;
         p.level += 1;
         p.expToNext = Math.floor(p.expToNext * 1.4);
-        gameRef.current.running = false;
+        // Phase change will trigger effect cleanup which stops the loop
         const choices = shuffle(LEVEL_UP_CHOICES).slice(0, 3);
         setLevelUpChoices(choices);
         setPlayer({ ...p });
@@ -616,7 +635,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     const updated = choice.apply(p);
     Object.assign(p, updated);
     setPlayer({ ...p });
-    gameRef.current.running = true;
+    // Don't set running here - the useEffect will set it when phase changes
     setPhase(gameRef.current.bossSpawned ? 'boss' : 'playing');
   }, []);
 
@@ -703,6 +722,20 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
                 onTouchEnd={handleTouchEnd}
               />
 
+              {/* Wave alert */}
+              {waveText && (
+                <div className="absolute top-1/4 left-0 right-0 text-center pointer-events-none z-20">
+                  <p className="text-xl lg:text-3xl font-title text-red-400 animate-pulse">{waveText}</p>
+                </div>
+              )}
+
+              {/* Score popups */}
+              {scorePopups.map((p) => (
+                <div key={p.id} className="absolute top-1/3 left-1/2 -translate-x-1/2 pointer-events-none z-20 animate-bounce">
+                  <p className="text-lg lg:text-2xl font-title" style={{ color: p.color }}>{p.text}</p>
+                </div>
+              ))}
+
               {/* Ready overlay - start button */}
               {phase === 'ready' && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-deep-navy/80 rounded-xl">
@@ -734,7 +767,18 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-mute-blue text-center mt-1 font-ui">이동: WASD/방향키 · 스킬: 스페이스바/위 버튼</p>
+            {/* Mobile D-Pad */}
+            <div className="flex justify-center mt-2 lg:hidden">
+              <div className="grid grid-cols-3 gap-1 w-32">
+                <div />
+                <button onTouchStart={() => { gameRef.current.touchDir = { x: 0, y: -1 }; }} onTouchEnd={() => { gameRef.current.touchDir = { x: 0, y: 0 }; }} className="w-10 h-10 rounded-lg bg-dark-indigo/80 border border-mute-blue/30 flex items-center justify-center text-lg active:bg-mute-blue/20">↑</button>
+                <div />
+                <button onTouchStart={() => { gameRef.current.touchDir = { x: -1, y: 0 }; }} onTouchEnd={() => { gameRef.current.touchDir = { x: 0, y: 0 }; }} className="w-10 h-10 rounded-lg bg-dark-indigo/80 border border-mute-blue/30 flex items-center justify-center text-lg active:bg-mute-blue/20">←</button>
+                <button onTouchStart={() => { gameRef.current.touchDir = { x: 0, y: 1 }; }} onTouchEnd={() => { gameRef.current.touchDir = { x: 0, y: 0 }; }} className="w-10 h-10 rounded-lg bg-dark-indigo/80 border border-mute-blue/30 flex items-center justify-center text-lg active:bg-mute-blue/20">↓</button>
+                <button onTouchStart={() => { gameRef.current.touchDir = { x: 1, y: 0 }; }} onTouchEnd={() => { gameRef.current.touchDir = { x: 0, y: 0 }; }} className="w-10 h-10 rounded-lg bg-dark-indigo/80 border border-mute-blue/30 flex items-center justify-center text-lg active:bg-mute-blue/20">→</button>
+              </div>
+            </div>
+            <p className="text-[10px] text-mute-blue text-center mt-1 font-ui hidden lg:block">이동: WASD/방향키 · 스킬: 스페이스바</p>
           </motion.div>
         )}
 
@@ -769,10 +813,12 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
               <p className="text-2xl font-title mb-1" style={{ color: phase === 'clear' ? '#ffd700' : '#ef4444' }}>
                 {phase === 'clear' ? '3분 생존 성공!' : '게임 오버'}
               </p>
-              <div className="text-sm font-ui text-light-gray space-y-1 my-4">
-                <p>점수: <span className="text-gold">{finalScore}</span></p>
-                <p>처치: {player?.kills || 0} · 수집: {player?.collected || 0}</p>
-                <p>레벨: Lv.{player?.level || 1}</p>
+              <div className="text-sm font-ui text-light-gray space-y-2 my-4">
+                <div className="flex justify-between px-4"><span className="text-mute-blue">점수</span><span className="text-gold">{finalScore}</span></div>
+                <div className="flex justify-between px-4"><span className="text-mute-blue">처치 수</span><span className="text-red-400">{player?.kills || 0}마리</span></div>
+                <div className="flex justify-between px-4"><span className="text-mute-blue">수집 간식</span><span className="text-green-400">{player?.collected || 0}개</span></div>
+                <div className="flex justify-between px-4"><span className="text-mute-blue">최종 레벨</span><span className="text-cyan-blue">Lv.{player?.level || 1}</span></div>
+                <div className="flex justify-between px-4"><span className="text-mute-blue">생존 시간</span><span className="text-light-gray">{Math.floor((GAME_DURATION - (gameRef.current.time || 0)) / 60)}분 {(GAME_DURATION - (gameRef.current.time || 0)) % 60}초</span></div>
               </div>
               <div className="flex gap-2 justify-center">
                 <button
