@@ -1,11 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
+const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
+const PLACEHOLDER_KEY = 'placeholder';
+
 function getUrl() {
-  return process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || PLACEHOLDER_URL;
 }
 
 function getAnonKey() {
-  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || PLACEHOLDER_KEY;
 }
 
 async function getProxyFetch() {
@@ -27,7 +30,7 @@ async function getProxyFetch() {
   return undefined;
 }
 
-// Client-side Supabase client (lazy init)
+// Client-side Supabase client (lazy)
 let _supabase: SupabaseClient | null = null;
 export function getSupabase() {
   if (!_supabase) {
@@ -35,18 +38,20 @@ export function getSupabase() {
   }
   return _supabase;
 }
+export const supabase = null as unknown as SupabaseClient; // unused, kept for compat
 
-// For backwards compat
-export const supabase = typeof window !== 'undefined'
-  ? createClient(getUrl(), getAnonKey())
-  : (null as unknown as SupabaseClient);
-
-// Server-side Supabase client with service role key
+// Server-side Supabase client
 export async function createServerClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !key) {
+    throw new Error('Supabase environment variables are not set');
+  }
+
   const proxyFetch = await getProxyFetch();
 
-  return createClient(getUrl(), serviceRoleKey, {
+  return createClient(url, key, {
     ...(proxyFetch ? { global: { fetch: proxyFetch } } : {}),
   });
 }
