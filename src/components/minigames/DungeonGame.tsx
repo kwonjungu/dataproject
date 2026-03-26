@@ -205,24 +205,46 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
       const H = canvas.height;
       const currentPhase = phaseRef.current;
 
-      // During levelup/ready, just keep drawing but don't update game logic
+      // ALWAYS clear and draw background first
+      ctx.fillStyle = '#0a0e27';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid
+      ctx.strokeStyle = '#1a1f4a';
+      ctx.lineWidth = 1;
+      const gx = p ? -(g.camera.x % 60) : 0;
+      const gy = p ? -(g.camera.y % 60) : 0;
+      for (let x = gx; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+      for (let y = gy; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+      // If no player or paused phase, draw static scene
       if (!p || currentPhase === 'ready' || currentPhase === 'levelup') {
-        // Still draw the scene so canvas isn't blank
-        ctx.fillStyle = '#0a0e27';
-        ctx.fillRect(0, 0, W, H);
-        ctx.strokeStyle = '#111640';
-        ctx.lineWidth = 1;
-        for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-        for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
         if (p) {
-          // Draw items/enemies/player at their last positions
           const cx = g.camera.x;
           const cy = g.camera.y;
-          for (const item of g.items) { ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.fillText(item.emoji, item.x - cx, item.y - cy + 7); }
-          for (const e of g.enemies) { ctx.beginPath(); ctx.arc(e.x - cx, e.y - cy, e.radius, 0, Math.PI * 2); ctx.fillStyle = e.color; ctx.fill(); }
+          // Draw frozen items
+          for (const item of g.items) {
+            ctx.font = '22px serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(item.emoji, item.x - cx, item.y - cy + 7);
+          }
+          // Draw frozen enemies
+          for (const e of g.enemies) {
+            ctx.beginPath();
+            ctx.arc(e.x - cx, e.y - cy, e.radius, 0, Math.PI * 2);
+            ctx.fillStyle = e.color;
+            ctx.fill();
+          }
+          // Draw player
           const pColor = p.evolutionStage >= 1 ? g.charDef.color : '#888';
-          ctx.beginPath(); ctx.ellipse(p.x - cx, p.y - cy, 16, 20, 0, 0, Math.PI * 2); ctx.fillStyle = pColor; ctx.fill();
-          ctx.fillStyle = '#b3e5fc'; ctx.beginPath(); ctx.ellipse(p.x - cx + 6, p.y - cy - 5, 8, 6, 0.2, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(p.x - cx, p.y - cy, 16, 20, 0, 0, Math.PI * 2);
+          ctx.fillStyle = pColor;
+          ctx.fill();
+          ctx.fillStyle = '#b3e5fc';
+          ctx.beginPath();
+          ctx.ellipse(p.x - cx + 6, p.y - cy - 5, 8, 6, 0.2, 0, Math.PI * 2);
+          ctx.fill();
         }
         animId = requestAnimationFrame(loop);
         return;
@@ -459,19 +481,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
       setPlayer({ ...p });
 
-      // --- DRAW ---
-      ctx.fillStyle = '#0a0e27';
-      ctx.fillRect(0, 0, W, H);
-
-      // Grid
-      ctx.strokeStyle = '#111640';
-      ctx.lineWidth = 1;
-      const gridSize = 60;
-      const startX = -(g.camera.x % gridSize);
-      const startY = -(g.camera.y % gridSize);
-      for (let x = startX; x < W; x += gridSize) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
-      for (let y = startY; y < H; y += gridSize) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
-
+      // --- DRAW --- (background already drawn above)
       const cx = g.camera.x;
       const cy = g.camera.y;
 
