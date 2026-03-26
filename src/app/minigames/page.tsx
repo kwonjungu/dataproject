@@ -48,8 +48,8 @@ export default function MinigamesPage() {
   const router = useRouter();
 
   return (
-    <main className="min-h-screen relative overflow-hidden">
-      <Starfield />
+    <main className="min-h-screen relative overflow-hidden bg-deep-navy">
+      {activeGame === 'menu' && <Starfield />}
 
       {/* Back to map */}
       <button

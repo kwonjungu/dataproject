@@ -19,6 +19,8 @@ let itemId = 0;
 
 export default function DungeonGame({ onBack }: DungeonGameProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ w: 640, h: 480 });
   const [phase, setPhase] = useState<GamePhase>('select');
   const [selectedChar, setSelectedChar] = useState<CharacterId | null>(null);
   const [player, setPlayer] = useState<PlayerState | null>(null);
@@ -79,6 +81,20 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
     setPhase('playing');
   }, []);
+
+  // Canvas resize
+  useEffect(() => {
+    const resize = () => {
+      const el = containerRef.current;
+      if (!el) return;
+      const w = Math.min(el.clientWidth, window.innerWidth - 16);
+      const h = Math.min(window.innerHeight - 160, w * 0.75);
+      setCanvasSize({ w: Math.floor(w), h: Math.floor(Math.max(h, 300)) });
+    };
+    resize();
+    window.addEventListener('resize', resize);
+    return () => window.removeEventListener('resize', resize);
+  }, [phase]);
 
   // Input handlers
   useEffect(() => {
@@ -558,8 +574,8 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
   };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="flex items-center justify-between w-full max-w-2xl mb-3">
+    <div className="flex flex-col items-center w-full">
+      <div className="flex items-center justify-between w-full mb-2">
         <button onClick={onBack} className="text-sm text-mute-blue hover:text-light-gray font-ui transition">← 돌아가기</button>
       </div>
 
@@ -594,7 +610,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
         {/* Game Canvas */}
         {(phase === 'playing' || phase === 'boss') && player && (
-          <motion.div key="game" className="relative w-full max-w-2xl" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div key="game" ref={containerRef} className="relative w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* HUD */}
             <div className="flex items-center justify-between mb-2 text-xs lg:text-sm font-ui">
               <div className="flex gap-3">
@@ -624,10 +640,10 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
             <canvas
               ref={canvasRef}
-              width={640}
-              height={480}
-              className="w-full rounded-xl border border-mute-blue/20 touch-none"
-              style={{ imageRendering: 'pixelated' }}
+              width={canvasSize.w}
+              height={canvasSize.h}
+              className="rounded-xl border border-mute-blue/20 touch-none"
+              style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '100%' }}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             />
