@@ -524,25 +524,32 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
 
     animId = requestAnimationFrame(loop);
     return () => { gameRef.current.running = false; cancelAnimationFrame(animId); };
-  }, [phase, selectedChar]);
+  }, [phase, selectedChar, canvasSize]);
 
-  // Touch joystick handler
+  // Touch joystick handler (use start pos as origin)
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  }, []);
+
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    const cx = rect.width / 2;
-    const cy = rect.height / 2;
-    const tx = touch.clientX - rect.left - cx;
-    const ty = touch.clientY - rect.top - cy;
-    const mag = Math.sqrt(tx * tx + ty * ty);
-    if (mag > 20) {
-      gameRef.current.touchDir = { x: tx / mag, y: ty / mag };
+    e.preventDefault();
+    if (!touchStart.current) return;
+    const t = e.touches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    const mag = Math.sqrt(dx * dx + dy * dy);
+    if (mag > 10) {
+      gameRef.current.touchDir = { x: dx / mag, y: dy / mag };
+    } else {
+      gameRef.current.touchDir = { x: 0, y: 0 };
     }
   }, []);
 
   const handleTouchEnd = useCallback(() => {
+    touchStart.current = null;
     gameRef.current.touchDir = { x: 0, y: 0 };
   }, []);
 
@@ -644,6 +651,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
               height={canvasSize.h}
               className="rounded-xl border border-mute-blue/20 touch-none"
               style={{ width: canvasSize.w, height: canvasSize.h, maxWidth: '100%' }}
+              onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
             />

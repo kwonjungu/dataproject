@@ -1,7 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+function getUrl() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+}
+
+function getAnonKey() {
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+}
 
 async function getProxyFetch() {
   const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
@@ -22,16 +27,26 @@ async function getProxyFetch() {
   return undefined;
 }
 
-// Client-side Supabase client (browser uses fetch natively)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Client-side Supabase client (lazy init)
+let _supabase: SupabaseClient | null = null;
+export function getSupabase() {
+  if (!_supabase) {
+    _supabase = createClient(getUrl(), getAnonKey());
+  }
+  return _supabase;
+}
+
+// For backwards compat
+export const supabase = typeof window !== 'undefined'
+  ? createClient(getUrl(), getAnonKey())
+  : (null as unknown as SupabaseClient);
 
 // Server-side Supabase client with service role key
-// Uses proxy only if HTTPS_PROXY is set (dev/sandbox environments)
 export async function createServerClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const proxyFetch = await getProxyFetch();
 
-  return createClient(supabaseUrl, serviceRoleKey, {
+  return createClient(getUrl(), serviceRoleKey, {
     ...(proxyFetch ? { global: { fetch: proxyFetch } } : {}),
   });
 }
