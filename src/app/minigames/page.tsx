@@ -7,10 +7,19 @@ import Starfield from '@/components/Starfield';
 import MemoryGame from '@/components/minigames/MemoryGame';
 import CatcherGame from '@/components/minigames/CatcherGame';
 import TypingGame from '@/components/minigames/TypingGame';
+import DungeonGame from '@/components/minigames/DungeonGame';
 
-type GameId = 'menu' | 'memory' | 'catcher' | 'typing';
+type GameId = 'menu' | 'memory' | 'catcher' | 'typing' | 'dungeon';
 
 const games = [
+  {
+    id: 'dungeon' as GameId,
+    emoji: '⚔️',
+    title: '간식왕국 던전',
+    desc: '바이러스를 물리치고 생존하라!',
+    color: '#ffd700',
+    featured: true,
+  },
   {
     id: 'memory' as GameId,
     emoji: '🃏',
@@ -100,6 +109,7 @@ export default function MinigamesPage() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -30 }}
             >
+              {activeGame === 'dungeon' && <DungeonGame onBack={() => setActiveGame('menu')} />}
               {activeGame === 'memory' && <MemoryGame onBack={() => setActiveGame('menu')} />}
               {activeGame === 'catcher' && <CatcherGame onBack={() => setActiveGame('menu')} />}
               {activeGame === 'typing' && <TypingGame onBack={() => setActiveGame('menu')} />}
