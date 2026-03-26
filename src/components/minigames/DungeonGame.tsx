@@ -182,34 +182,56 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     }
   }, [phase, selectedChar]);
 
-  // Main game loop
+  // Game phase ref for loop to check without re-mounting
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
+  // Main game loop - runs continuously once canvas is mounted, checks phase internally
   useEffect(() => {
-    if (phase !== 'playing' && phase !== 'boss') return;
+    if (phase !== 'ready' && phase !== 'playing' && phase !== 'boss' && phase !== 'levelup') return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
     let stopped = false;
-    gameRef.current.running = true;
     let animId: number;
-
-    // Draw initial frame immediately so canvas isn't blank
-    ctx.fillStyle = '#0a0e27';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = '#e8eaf6';
-    ctx.font = '20px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('게임 로딩 중...', canvas.width / 2, canvas.height / 2);
 
     const loop = () => {
       if (stopped) return;
       const g = gameRef.current;
       const p = g.player;
-      if (!p) { animId = requestAnimationFrame(loop); return; }
-
       const W = canvas.width;
       const H = canvas.height;
+      const currentPhase = phaseRef.current;
+
+      // During levelup/ready, just keep drawing but don't update game logic
+      if (!p || currentPhase === 'ready' || currentPhase === 'levelup') {
+        // Still draw the scene so canvas isn't blank
+        ctx.fillStyle = '#0a0e27';
+        ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = '#111640';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+        for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+        if (p) {
+          // Draw items/enemies/player at their last positions
+          const cx = g.camera.x;
+          const cy = g.camera.y;
+          for (const item of g.items) { ctx.font = '22px serif'; ctx.textAlign = 'center'; ctx.fillText(item.emoji, item.x - cx, item.y - cy + 7); }
+          for (const e of g.enemies) { ctx.beginPath(); ctx.arc(e.x - cx, e.y - cy, e.radius, 0, Math.PI * 2); ctx.fillStyle = e.color; ctx.fill(); }
+          const pColor = p.evolutionStage >= 1 ? g.charDef.color : '#888';
+          ctx.beginPath(); ctx.ellipse(p.x - cx, p.y - cy, 16, 20, 0, 0, Math.PI * 2); ctx.fillStyle = pColor; ctx.fill();
+          ctx.fillStyle = '#b3e5fc'; ctx.beginPath(); ctx.ellipse(p.x - cx + 6, p.y - cy - 5, 8, 6, 0.2, 0, Math.PI * 2); ctx.fill();
+        }
+        animId = requestAnimationFrame(loop);
+        return;
+      }
+
+      if (currentPhase !== 'playing' && currentPhase !== 'boss') {
+        animId = requestAnimationFrame(loop);
+        return;
+      }
 
       // --- UPDATE ---
       // Movement
@@ -418,11 +440,12 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
         p.exp -= p.expToNext;
         p.level += 1;
         p.expToNext = Math.floor(p.expToNext * 1.4);
-        // Phase change will trigger effect cleanup which stops the loop
         const choices = shuffle(LEVEL_UP_CHOICES).slice(0, 3);
         setLevelUpChoices(choices);
         setPlayer({ ...p });
         setPhase('levelup');
+        // Don't return - loop continues, but will skip update logic via phaseRef check
+        animId = requestAnimationFrame(loop);
         return;
       }
 
@@ -596,8 +619,10 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     };
 
     animId = requestAnimationFrame(loop);
-    return () => { stopped = true; gameRef.current.running = false; cancelAnimationFrame(animId); };
-  }, [phase, selectedChar]);
+    return () => { stopped = true; cancelAnimationFrame(animId); };
+    // Only re-mount when selectedChar changes (new game), NOT on phase changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedChar]);
 
   // Touch joystick handler (use start pos as origin)
   const touchStart = useRef<{ x: number; y: number } | null>(null);
