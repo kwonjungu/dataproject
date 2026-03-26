@@ -76,7 +76,7 @@ export default function MinigamesPage() {
                 간식 지식을 게임으로 키워보자!
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6 w-full">
+              <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 w-full">
                 {games.map((game, i) => (
                   <motion.button
                     key={game.id}

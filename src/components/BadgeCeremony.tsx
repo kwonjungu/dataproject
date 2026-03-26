@@ -14,7 +14,7 @@ interface BadgeCeremonyProps {
 }
 
 export default function BadgeCeremony({ level, studentName, onComplete }: BadgeCeremonyProps) {
-  const stage = stages.find((s) => s.level === level)!;
+  const stage = stages.find((s) => s.level === level) || stages[0];
   const [showStory, setShowStory] = useState(false);
 
   const completionText = stage.completionStory.replace('{name}', studentName);

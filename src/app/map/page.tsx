@@ -48,7 +48,7 @@ export default function MapPage() {
             npcGuide.trigger(getDialogueScript('firstMapEntry', name));
           }, 800);
         } else {
-          const count = b.length;
+          const count = Math.min(b.length, 3);
           const key = `reconnect${count}` as 'reconnect0' | 'reconnect1' | 'reconnect2' | 'reconnect3';
           setTimeout(() => {
             npcGuide.trigger(getDialogueScript(key, name));

@@ -143,10 +143,8 @@ export interface Particle {
 
 export const GAME_DURATION = 180; // 3 minutes
 export const MAP_SIZE = 1600;
-export const VIEWPORT_PADDING = 40;
 
 export const EVOLUTION_THRESHOLDS = [0, 3, 5, 8, 10];
-export const EVOLUTION_COLORS = ['#888', '', '', '', '#ffd700'];
 
 export const LEVEL_UP_CHOICES: LevelUpChoice[] = [
   { id: 'hp', emoji: '🥛', name: '우유 갑옷', desc: 'HP +1', apply: (s) => ({ ...s, maxHp: s.maxHp + 1, hp: s.hp + 1 }) },

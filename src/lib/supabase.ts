@@ -30,7 +30,7 @@ async function getProxyFetch() {
   return undefined;
 }
 
-// Client-side Supabase client (lazy)
+// Client-side Supabase client (lazy init)
 let _supabase: SupabaseClient | null = null;
 export function getSupabase() {
   if (!_supabase) {
@@ -38,7 +38,6 @@ export function getSupabase() {
   }
   return _supabase;
 }
-export const supabase = null as unknown as SupabaseClient; // unused, kept for compat
 
 // Server-side Supabase client
 export async function createServerClient() {
