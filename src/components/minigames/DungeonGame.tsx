@@ -12,7 +12,7 @@ interface DungeonGameProps {
   onBack: () => void;
 }
 
-type GamePhase = 'select' | 'playing' | 'levelup' | 'boss' | 'over' | 'clear';
+type GamePhase = 'select' | 'ready' | 'playing' | 'levelup' | 'boss' | 'over' | 'clear';
 
 let enemyId = 0;
 let itemId = 0;
@@ -81,16 +81,35 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     img.src = '/images/villain.png';
     gameRef.current.villainImg = img;
 
+    setPhase('ready');
+  }, []);
+
+  const beginGame = useCallback(() => {
+    gameRef.current.running = true;
+    gameRef.current.lastSpawn = performance.now();
+    gameRef.current.lastItemSpawn = performance.now();
+    gameRef.current.lastAttack = performance.now();
     setPhase('playing');
   }, []);
 
   // No canvas resize needed - fixed internal resolution, CSS scales it
 
+  // Skill activation (defined before useEffect that references it)
+  const activateSkillRef = useRef<() => void>(() => {});
+  activateSkillRef.current = () => {
+    const p = gameRef.current.player;
+    if (!p || p.skillCooldown > 0) return;
+    p.skillActive = true;
+    p.skillTimer = 3;
+    p.skillCooldown = 15;
+    if (gameRef.current.charDef.id === 'dasom') { p.invincible = true; p.invincibleTimer = 3; }
+  };
+
   // Input handlers
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       gameRef.current.keys.add(e.key.toLowerCase());
-      if (e.key === ' ') { e.preventDefault(); activateSkill(); }
+      if (e.key === ' ') { e.preventDefault(); activateSkillRef.current(); }
     };
     const onKeyUp = (e: KeyboardEvent) => gameRef.current.keys.delete(e.key.toLowerCase());
     window.addEventListener('keydown', onKeyDown);
@@ -112,6 +131,42 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     }, 1000);
     return () => clearInterval(t);
   }, [phase]);
+
+  // Draw static scene for ready phase
+  useEffect(() => {
+    if (phase !== 'ready') return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Dark background with grid
+    ctx.fillStyle = '#0a0e27';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = '#111640';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    // Player preview in center
+    if (selectedChar) {
+      const c = CHARACTERS[selectedChar];
+      ctx.beginPath();
+      ctx.ellipse(W / 2, H / 2, 20, 25, 0, 0, Math.PI * 2);
+      ctx.fillStyle = c.color;
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(W / 2 - 4, H / 2 - 4, 8, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(W / 2 - 2, H / 2 - 3, 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, [phase, selectedChar]);
 
   // Main game loop
   useEffect(() => {
@@ -325,7 +380,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
           } else {
             p.score -= 5;
             p.speed *= 0.7;
-            setTimeout(() => { if (g.player) g.player.speed = CHARACTERS[selectedChar!].baseSpeed * (1 + (p.level - 1) * 0.05); }, 2000);
+            setTimeout(() => { if (g.player && selectedChar) g.player.speed = CHARACTERS[selectedChar].baseSpeed * (1 + (p.level - 1) * 0.05); }, 2000);
             for (let k = 0; k < 4; k++) {
               g.particles.push({
                 x: item.x, y: item.y,
@@ -552,15 +607,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     gameRef.current.touchDir = { x: 0, y: 0 };
   }, []);
 
-  // Skill activation
-  const activateSkill = useCallback(() => {
-    const p = gameRef.current.player;
-    if (!p || p.skillCooldown > 0) return;
-    p.skillActive = true;
-    p.skillTimer = 3;
-    p.skillCooldown = 15;
-    if (gameRef.current.charDef.id === 'dasom') { p.invincible = true; p.invincibleTimer = 3; }
-  }, []);
+  // activateSkill is now defined via ref above useEffect
 
   // Level up selection
   const handleLevelUp = useCallback((choice: typeof LEVEL_UP_CHOICES[0]) => {
@@ -615,7 +662,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
         )}
 
         {/* Game Canvas */}
-        {(phase === 'playing' || phase === 'boss') && player && (
+        {(phase === 'ready' || phase === 'playing' || phase === 'boss') && player && (
           <motion.div key="game" ref={containerRef} className="relative w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {/* HUD */}
             <div className="flex items-center justify-between mb-2 text-xs lg:text-sm font-ui">
@@ -644,27 +691,48 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
               </div>
             )}
 
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_W}
-              height={CANVAS_H}
-              className="rounded-xl border border-mute-blue/20 touch-none w-full"
-              style={{ aspectRatio: `${CANVAS_W}/${CANVAS_H}`, maxHeight: 'calc(100vh - 200px)' }}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            />
+            <div className="relative">
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_W}
+                height={CANVAS_H}
+                className="rounded-xl border border-mute-blue/20 touch-none w-full"
+                style={{ aspectRatio: `${CANVAS_W}/${CANVAS_H}`, maxHeight: 'calc(100vh - 200px)' }}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+              />
+
+              {/* Ready overlay - start button */}
+              {phase === 'ready' && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-deep-navy/80 rounded-xl">
+                  <p className="text-lg lg:text-2xl font-title text-gold mb-2">
+                    {selectedChar ? CHARACTERS[selectedChar].emoji : ''} {selectedChar ? CHARACTERS[selectedChar].name : ''}
+                  </p>
+                  <p className="text-xs lg:text-sm text-mute-blue font-ui mb-6">3분간 생존하세요!</p>
+                  <button
+                    onClick={beginGame}
+                    className="px-10 py-4 rounded-2xl bg-gradient-to-r from-cyan-blue to-electric-purple text-white text-xl lg:text-2xl font-title hover:brightness-110 active:scale-95 transition-all"
+                  >
+                    게임 시작!
+                  </button>
+                  <p className="text-[10px] text-mute-blue mt-4 font-ui">이동: WASD/방향키 · 공격: 자동 · 스킬: 스페이스바</p>
+                </div>
+              )}
+            </div>
 
             {/* Skill button */}
             <div className="flex justify-center mt-3 gap-3">
-              <button
-                onClick={activateSkill}
-                disabled={player.skillCooldown > 0}
-                className="px-4 py-2 rounded-lg font-ui text-sm text-white transition disabled:opacity-30"
-                style={{ background: selectedChar ? CHARACTERS[selectedChar].color : '#888' }}
-              >
-                {player.skillCooldown > 0 ? `${Math.ceil(player.skillCooldown)}초` : `⚡ ${CHARACTERS[selectedChar!].skill}`}
-              </button>
+              {phase !== 'ready' && selectedChar && (
+                <button
+                  onClick={() => activateSkillRef.current()}
+                  disabled={player.skillCooldown > 0}
+                  className="px-4 py-2 rounded-lg font-ui text-sm text-white transition disabled:opacity-30"
+                  style={{ background: CHARACTERS[selectedChar].color }}
+                >
+                  {player.skillCooldown > 0 ? `${Math.ceil(player.skillCooldown)}초` : `⚡ ${CHARACTERS[selectedChar].skill}`}
+                </button>
+              )}
             </div>
             <p className="text-[10px] text-mute-blue text-center mt-1 font-ui">이동: WASD/방향키 · 스킬: 스페이스바/위 버튼</p>
           </motion.div>
