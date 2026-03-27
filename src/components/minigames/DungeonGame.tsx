@@ -98,11 +98,11 @@ function updateGame(g: GameState): void {
     }
   }
 
-  // Difficulty scales with elapsed time (time counts UP now)
-  const elapsed = GAME_DURATION - g.time; // seconds since start (goes negative in endless)
-  const totalElapsed = elapsed > 0 ? elapsed : GAME_DURATION + Math.abs(g.time);
-  const difficultyMult = 1 + totalElapsed / 120; // gets harder every 2 min
-  const spawnRate = Math.max(200, 1200 - totalElapsed * 4); // faster spawns over time
+  // Difficulty: first 3 min = easy (same as before), then gradually harder
+  const totalElapsed = GAME_DURATION - g.time; // total seconds played
+  const endlessTime = Math.max(0, totalElapsed - GAME_DURATION); // seconds in endless mode
+  const difficultyMult = 1 + endlessTime / 180; // only scales AFTER 3 min
+  const spawnRate = totalElapsed < 60 ? 1200 : totalElapsed < 120 ? 800 : totalElapsed < 180 ? 500 : Math.max(250, 500 - endlessTime * 2);
 
   // Spawn enemies
   if (now - g.lastSpawn > spawnRate) {
@@ -112,21 +112,20 @@ function updateGame(g: GameState): void {
     const types: Enemy['type'][] = totalElapsed < 60 ? ['normal'] : totalElapsed < 120 ? ['normal', 'normal', 'speed'] : totalElapsed < 180 ? ['normal', 'speed', 'tank'] : ['normal', 'speed', 'speed', 'tank', 'tank'];
     const type = types[Math.floor(Math.random() * types.length)];
     const ex = p.x + Math.cos(angle) * dist, ey = p.y + Math.sin(angle) * dist;
-    const hpMult = difficultyMult;
-    const spdMult = 1 + totalElapsed / 300;
     const e: Enemy = type === 'speed'
-      ? { id: eid++, x: ex, y: ey, hp: Math.floor(10 * hpMult), maxHp: Math.floor(10 * hpMult), speed: 2.5 * spdMult, radius: 12, type, color: '#ef4444', damage: 1 }
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(10 * difficultyMult), maxHp: Math.floor(10 * difficultyMult), speed: 2.5, radius: 12, type, color: '#ef4444', damage: 1 }
       : type === 'tank'
-      ? { id: eid++, x: ex, y: ey, hp: Math.floor(40 * hpMult), maxHp: Math.floor(40 * hpMult), speed: 0.8 * spdMult, radius: 22, type, color: '#92400e', damage: Math.ceil(difficultyMult) }
-      : { id: eid++, x: ex, y: ey, hp: Math.floor(15 * hpMult), maxHp: Math.floor(15 * hpMult), speed: 1.2 * spdMult, radius: 14, type, color: '#a855f7', damage: 1 };
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(40 * difficultyMult), maxHp: Math.floor(40 * difficultyMult), speed: 0.8, radius: 22, type, color: '#92400e', damage: 1 }
+      : { id: eid++, x: ex, y: ey, hp: Math.floor(15 * difficultyMult), maxHp: Math.floor(15 * difficultyMult), speed: 1.2, radius: 14, type, color: '#a855f7', damage: 1 };
     g.enemies.push(e);
   }
 
-  // Boss every 3 minutes
-  if (totalElapsed > 0 && totalElapsed % 180 < 1 && !g.bossSpawned) {
+  // Boss at 2min mark, then every 3min in endless
+  const bossInterval = totalElapsed < 180 ? 120 : 180;
+  if (totalElapsed > 60 && Math.floor(totalElapsed) % bossInterval < 1 && !g.bossSpawned) {
     g.bossSpawned = true;
     const bossHp = Math.floor(300 * difficultyMult);
-    g.enemies.push({ id: eid++, x: p.x + 500, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.6 * (1 + totalElapsed / 600), radius: 40, type: 'boss', color: '#7c3aed', damage: Math.ceil(difficultyMult) });
+    g.enemies.push({ id: eid++, x: p.x + 500, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.6, radius: 40, type: 'boss', color: '#7c3aed', damage: 1 });
     g.phase = 'boss';
   }
   // Reset boss flag after boss is killed
