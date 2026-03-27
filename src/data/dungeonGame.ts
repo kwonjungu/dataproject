@@ -141,8 +141,8 @@ export interface Particle {
   radius: number;
 }
 
-export const GAME_DURATION = 180; // 3 minutes
-export const MAP_SIZE = 1600;
+export const GAME_DURATION = 180; // 3 minutes before endless mode
+export const MAP_SIZE = 4000;
 
 export const EVOLUTION_THRESHOLDS = [0, 3, 5, 8, 10];
 

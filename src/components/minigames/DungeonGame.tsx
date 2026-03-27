@@ -59,8 +59,12 @@ function updateGame(g: GameState): void {
     p.x += (dx / mag) * spd;
     p.y += (dy / mag) * spd;
   }
-  p.x = Math.max(20, Math.min(MAP_SIZE - 20, p.x));
-  p.y = Math.max(20, Math.min(MAP_SIZE - 20, p.y));
+  // Wall boundary with bounce-back
+  const WALL = 40;
+  if (p.x < WALL) p.x = WALL;
+  if (p.x > MAP_SIZE - WALL) p.x = MAP_SIZE - WALL;
+  if (p.y < WALL) p.y = WALL;
+  if (p.y > MAP_SIZE - WALL) p.y = MAP_SIZE - WALL;
 
   // Timers
   if (p.invincible) { p.invincibleTimer -= 1 / 60; if (p.invincibleTimer <= 0) p.invincible = false; }
@@ -94,27 +98,41 @@ function updateGame(g: GameState): void {
     }
   }
 
+  // Difficulty scales with elapsed time (time counts UP now)
+  const elapsed = GAME_DURATION - g.time; // seconds since start (goes negative in endless)
+  const totalElapsed = elapsed > 0 ? elapsed : GAME_DURATION + Math.abs(g.time);
+  const difficultyMult = 1 + totalElapsed / 120; // gets harder every 2 min
+  const spawnRate = Math.max(200, 1200 - totalElapsed * 4); // faster spawns over time
+
   // Spawn enemies
-  if (now - g.lastSpawn > (g.time > 120 ? 1200 : g.time > 60 ? 700 : 400)) {
+  if (now - g.lastSpawn > spawnRate) {
     g.lastSpawn = now;
     const angle = Math.random() * Math.PI * 2;
     const dist = 400 + Math.random() * 200;
-    const types: Enemy['type'][] = g.time > 120 ? ['normal'] : g.time > 60 ? ['normal', 'normal', 'speed'] : ['normal', 'speed', 'tank'];
+    const types: Enemy['type'][] = totalElapsed < 60 ? ['normal'] : totalElapsed < 120 ? ['normal', 'normal', 'speed'] : totalElapsed < 180 ? ['normal', 'speed', 'tank'] : ['normal', 'speed', 'speed', 'tank', 'tank'];
     const type = types[Math.floor(Math.random() * types.length)];
     const ex = p.x + Math.cos(angle) * dist, ey = p.y + Math.sin(angle) * dist;
+    const hpMult = difficultyMult;
+    const spdMult = 1 + totalElapsed / 300;
     const e: Enemy = type === 'speed'
-      ? { id: eid++, x: ex, y: ey, hp: 10, maxHp: 10, speed: 2.5, radius: 12, type, color: '#ef4444', damage: 1 }
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(10 * hpMult), maxHp: Math.floor(10 * hpMult), speed: 2.5 * spdMult, radius: 12, type, color: '#ef4444', damage: 1 }
       : type === 'tank'
-      ? { id: eid++, x: ex, y: ey, hp: 40, maxHp: 40, speed: 0.8, radius: 22, type, color: '#92400e', damage: 1 }
-      : { id: eid++, x: ex, y: ey, hp: 15, maxHp: 15, speed: 1.2, radius: 14, type, color: '#a855f7', damage: 1 };
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(40 * hpMult), maxHp: Math.floor(40 * hpMult), speed: 0.8 * spdMult, radius: 22, type, color: '#92400e', damage: Math.ceil(difficultyMult) }
+      : { id: eid++, x: ex, y: ey, hp: Math.floor(15 * hpMult), maxHp: Math.floor(15 * hpMult), speed: 1.2 * spdMult, radius: 14, type, color: '#a855f7', damage: 1 };
     g.enemies.push(e);
   }
 
-  // Boss
-  if (g.time <= 60 && !g.bossSpawned) {
+  // Boss every 3 minutes
+  if (totalElapsed > 0 && totalElapsed % 180 < 1 && !g.bossSpawned) {
     g.bossSpawned = true;
-    g.enemies.push({ id: eid++, x: p.x + 500, y: p.y, hp: 300, maxHp: 300, speed: 0.6, radius: 40, type: 'boss', color: '#7c3aed', damage: 2 });
+    const bossHp = Math.floor(300 * difficultyMult);
+    g.enemies.push({ id: eid++, x: p.x + 500, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.6 * (1 + totalElapsed / 600), radius: 40, type: 'boss', color: '#7c3aed', damage: Math.ceil(difficultyMult) });
     g.phase = 'boss';
+  }
+  // Reset boss flag after boss is killed
+  if (g.bossSpawned && !g.enemies.some(e => e.type === 'boss')) {
+    g.bossSpawned = false;
+    if (g.phase === 'boss') g.phase = 'playing';
   }
 
   // Spawn items
@@ -205,6 +223,39 @@ function drawGame(ctx: CanvasRenderingContext2D, g: GameState, W: number, H: num
   ctx.lineWidth = 1;
   for (let x = -(cx % 60); x < W; x += 60) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
   for (let y = -(cy % 60); y < H; y += 60) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // Walls — draw visible edges of the map boundary
+  const WALL = 40;
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 4;
+  ctx.shadowColor = '#ff4444';
+  ctx.shadowBlur = 12;
+  // Top wall
+  if (cy < WALL) { const wy = WALL - cy; ctx.beginPath(); ctx.moveTo(Math.max(0, WALL - cx), wy); ctx.lineTo(Math.min(W, MAP_SIZE - WALL - cx), wy); ctx.stroke(); }
+  // Bottom wall
+  if (cy + H > MAP_SIZE - WALL) { const wy = MAP_SIZE - WALL - cy; ctx.beginPath(); ctx.moveTo(Math.max(0, WALL - cx), wy); ctx.lineTo(Math.min(W, MAP_SIZE - WALL - cx), wy); ctx.stroke(); }
+  // Left wall
+  if (cx < WALL) { const wx = WALL - cx; ctx.beginPath(); ctx.moveTo(wx, Math.max(0, WALL - cy)); ctx.lineTo(wx, Math.min(H, MAP_SIZE - WALL - cy)); ctx.stroke(); }
+  // Right wall
+  if (cx + W > MAP_SIZE - WALL) { const wx = MAP_SIZE - WALL - cx; ctx.beginPath(); ctx.moveTo(wx, Math.max(0, WALL - cy)); ctx.lineTo(wx, Math.min(H, MAP_SIZE - WALL - cy)); ctx.stroke(); }
+  ctx.shadowBlur = 0;
+
+  // Wall corners — danger markers
+  const corners = [[WALL, WALL], [MAP_SIZE - WALL, WALL], [WALL, MAP_SIZE - WALL], [MAP_SIZE - WALL, MAP_SIZE - WALL]];
+  for (const [wx, wy] of corners) {
+    const sx = wx - cx, sy = wy - cy;
+    if (sx > -30 && sx < W + 30 && sy > -30 && sy < H + 30) {
+      ctx.fillStyle = '#ff444460';
+      ctx.beginPath(); ctx.arc(sx, sy, 8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // Outside-wall shading (dark area beyond walls)
+  ctx.fillStyle = 'rgba(0,0,0,0.6)';
+  if (cy < WALL) ctx.fillRect(0, 0, W, WALL - cy);
+  if (cy + H > MAP_SIZE - WALL) ctx.fillRect(0, MAP_SIZE - WALL - cy, W, H - (MAP_SIZE - WALL - cy));
+  if (cx < WALL) ctx.fillRect(0, 0, WALL - cx, H);
+  if (cx + W > MAP_SIZE - WALL) ctx.fillRect(MAP_SIZE - WALL - cx, 0, W - (MAP_SIZE - WALL - cx), H);
 
   // Items
   for (const item of g.items) {
@@ -337,12 +388,11 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
     return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
   }, []);
 
-  // Timer
+  // Timer (counts down, then goes negative for endless mode)
   useEffect(() => {
     if (phase !== 'playing' && phase !== 'boss') return;
     const t = setInterval(() => {
       gameRef.current.time -= 1;
-      if (gameRef.current.time <= 0) { gameRef.current.phase = 'clear'; setPhase('clear'); }
       forceRender(n => n + 1);
     }, 1000);
     return () => clearInterval(t);
@@ -390,7 +440,11 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
             </div>
             <div className="flex gap-2">
               <span className="text-light-gray">{p.score}점</span>
-              <span className="text-cyan-blue">{Math.floor(time / 60)}:{String(time % 60).padStart(2, '0')}</span>
+              {time > 0 ? (
+                <span className="text-cyan-blue">{Math.floor(time / 60)}:{String(time % 60).padStart(2, '0')}</span>
+              ) : (
+                <span className="text-fire-orange">무한모드 {Math.floor(Math.abs(time) / 60)}:{String(Math.abs(time) % 60).padStart(2, '0')}</span>
+              )}
             </div>
           </div>
         )}
@@ -441,7 +495,7 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
         {phase === 'ready' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-deep-navy/80 rounded-xl z-10">
             <p className="text-lg lg:text-2xl font-title text-gold mb-2">{selectedChar && CHARACTERS[selectedChar].emoji} {selectedChar && CHARACTERS[selectedChar].name}</p>
-            <p className="text-xs text-mute-blue font-ui mb-6">3분간 생존하세요!</p>
+            <p className="text-xs text-mute-blue font-ui mb-6">3분 후 무한 모드! 얼마나 버틸 수 있을까?</p>
             <button onClick={beginPlaying}
               className="px-10 py-4 rounded-2xl bg-gradient-to-r from-cyan-blue to-electric-purple text-white text-xl font-title hover:brightness-110 active:scale-95 transition">
               게임 시작!
@@ -469,15 +523,17 @@ export default function DungeonGame({ onBack }: DungeonGameProps) {
           </div>
         )}
 
-        {/* Game over / clear overlay */}
-        {(phase === 'over' || phase === 'clear') && (
+        {/* Game over overlay */}
+        {phase === 'over' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-deep-navy/90 rounded-xl z-10 p-4">
-            <p className="text-2xl font-title mb-2" style={{ color: phase === 'clear' ? '#ffd700' : '#ef4444' }}>
-              {phase === 'clear' ? '3분 생존 성공!' : '게임 오버'}
-            </p>
-            <div className="text-sm font-ui text-light-gray space-y-1 my-4">
-              <p>점수: <span className="text-gold">{p?.score || 0}</span></p>
-              <p>처치: {p?.kills || 0} · 수집: {p?.collected || 0} · Lv.{p?.level || 1}</p>
+            <p className="text-2xl font-title text-red-400 mb-2">게임 오버</p>
+            <div className="text-sm font-ui text-light-gray space-y-2 my-4 w-full max-w-xs">
+              <div className="flex justify-between"><span className="text-mute-blue">점수</span><span className="text-gold">{p?.score || 0}</span></div>
+              <div className="flex justify-between"><span className="text-mute-blue">처치</span><span className="text-red-400">{p?.kills || 0}마리</span></div>
+              <div className="flex justify-between"><span className="text-mute-blue">수집</span><span className="text-green-400">{p?.collected || 0}개</span></div>
+              <div className="flex justify-between"><span className="text-mute-blue">레벨</span><span className="text-cyan-blue">Lv.{p?.level || 1}</span></div>
+              <div className="flex justify-between"><span className="text-mute-blue">생존</span><span>{Math.floor((GAME_DURATION - time) / 60)}분 {(GAME_DURATION - time) % 60}초</span></div>
+              {time <= 0 && <p className="text-center text-fire-orange text-xs mt-1">무한 모드 돌입!</p>}
             </div>
             <div className="flex gap-2">
               <button onClick={() => { gameRef.current = createGameState(); setPhase('select'); setSelectedChar(null); }}
