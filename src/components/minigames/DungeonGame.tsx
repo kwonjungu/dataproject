@@ -107,11 +107,12 @@ function updateGame(g: GameState): void {
   const hpMult = 1 + totalElapsed / 120;
 
   // Spawn rate stays the same (comfortable)
+  // 3min+: 800ms → drops fast → min 150ms (absolute chaos)
   const spawnRate = totalElapsed < 30 ? 2000
     : totalElapsed < 60 ? 1500
     : totalElapsed < 120 ? 1000
     : totalElapsed < 180 ? 800
-    : Math.max(400, 800 - endlessTime * 2);
+    : Math.max(150, 800 - endlessTime * 5);
 
   // Spawn enemies
   if (now - g.lastSpawn > spawnRate) {
