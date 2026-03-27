@@ -98,34 +98,62 @@ function updateGame(g: GameState): void {
     }
   }
 
-  // Difficulty: first 3 min = easy (same as before), then gradually harder
-  const totalElapsed = GAME_DURATION - g.time; // total seconds played
-  const endlessTime = Math.max(0, totalElapsed - GAME_DURATION); // seconds in endless mode
-  const difficultyMult = 1 + endlessTime / 180; // only scales AFTER 3 min
-  const spawnRate = totalElapsed < 60 ? 1200 : totalElapsed < 120 ? 800 : totalElapsed < 180 ? 500 : Math.max(250, 500 - endlessTime * 2);
+  // ===== DIFFICULTY DESIGN (for elementary school kids) =====
+  // Phase 1 (0~1min): Tutorial feel. Few slow enemies. Lots of snacks. Just get used to moving.
+  // Phase 2 (1~2min): A bit more enemies. Speed type appears. Still comfortable.
+  // Phase 3 (2~3min): Tank type appears. First boss at 2:30. Feels challenging but doable.
+  // Phase 4 (3min+): Endless mode. Very gradual increase. Should feel like "I can do one more minute!"
+
+  const totalElapsed = GAME_DURATION - g.time;
+  const endlessTime = Math.max(0, totalElapsed - GAME_DURATION);
+  const difficultyMult = 1 + endlessTime / 300; // very slow scaling in endless
+
+  // Spawn rate: starts very slow, stays comfortable for 3 min
+  //   0~30s:  one enemy every 3 seconds (tutorial)
+  //   30s~1m: every 2.5 seconds
+  //   1m~2m:  every 2 seconds
+  //   2m~3m:  every 1.5 seconds
+  //   3m+:    gradually faster, min 0.8 seconds
+  const spawnRate = totalElapsed < 30 ? 3000
+    : totalElapsed < 60 ? 2500
+    : totalElapsed < 120 ? 2000
+    : totalElapsed < 180 ? 1500
+    : Math.max(800, 1500 - endlessTime * 3);
 
   // Spawn enemies
   if (now - g.lastSpawn > spawnRate) {
     g.lastSpawn = now;
     const angle = Math.random() * Math.PI * 2;
-    const dist = 400 + Math.random() * 200;
-    const types: Enemy['type'][] = totalElapsed < 60 ? ['normal'] : totalElapsed < 120 ? ['normal', 'normal', 'speed'] : totalElapsed < 180 ? ['normal', 'speed', 'tank'] : ['normal', 'speed', 'speed', 'tank', 'tank'];
+    const dist = 500 + Math.random() * 200; // spawn far away so player has time to react
+
+    // Enemy types: only normal for first minute
+    const types: Enemy['type'][] = totalElapsed < 60 ? ['normal']
+      : totalElapsed < 120 ? ['normal', 'normal', 'normal', 'speed'] // 25% chance speed
+      : totalElapsed < 180 ? ['normal', 'normal', 'speed', 'tank']   // speed + tank
+      : ['normal', 'speed', 'speed', 'tank', 'tank'];
     const type = types[Math.floor(Math.random() * types.length)];
     const ex = p.x + Math.cos(angle) * dist, ey = p.y + Math.sin(angle) * dist;
+
+    // Enemy stats: SLOW. Player speed is 2.5~3.5, enemies must be much slower
     const e: Enemy = type === 'speed'
-      ? { id: eid++, x: ex, y: ey, hp: Math.floor(10 * difficultyMult), maxHp: Math.floor(10 * difficultyMult), speed: 2.5, radius: 12, type, color: '#ef4444', damage: 1 }
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(8 * difficultyMult), maxHp: Math.floor(8 * difficultyMult), speed: 1.4, radius: 10, type, color: '#ef4444', damage: 1 }
       : type === 'tank'
-      ? { id: eid++, x: ex, y: ey, hp: Math.floor(40 * difficultyMult), maxHp: Math.floor(40 * difficultyMult), speed: 0.8, radius: 22, type, color: '#92400e', damage: 1 }
-      : { id: eid++, x: ex, y: ey, hp: Math.floor(15 * difficultyMult), maxHp: Math.floor(15 * difficultyMult), speed: 1.2, radius: 14, type, color: '#a855f7', damage: 1 };
+      ? { id: eid++, x: ex, y: ey, hp: Math.floor(30 * difficultyMult), maxHp: Math.floor(30 * difficultyMult), speed: 0.5, radius: 20, type, color: '#92400e', damage: 1 }
+      : { id: eid++, x: ex, y: ey, hp: Math.floor(10 * difficultyMult), maxHp: Math.floor(10 * difficultyMult), speed: 0.8, radius: 12, type, color: '#a855f7', damage: 1 };
     g.enemies.push(e);
   }
 
-  // Boss at 2min mark, then every 3min in endless
-  const bossInterval = totalElapsed < 180 ? 120 : 180;
-  if (totalElapsed > 60 && Math.floor(totalElapsed) % bossInterval < 1 && !g.bossSpawned) {
+  // Boss: first at 2:30, then every 3min in endless. Slow and big but avoidable.
+  if (totalElapsed >= 150 && !g.bossSpawned) {
     g.bossSpawned = true;
-    const bossHp = Math.floor(300 * difficultyMult);
-    g.enemies.push({ id: eid++, x: p.x + 500, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.6, radius: 40, type: 'boss', color: '#7c3aed', damage: 1 });
+    const bossHp = Math.floor(200 * difficultyMult);
+    g.enemies.push({ id: eid++, x: p.x + 600, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.4, radius: 40, type: 'boss', color: '#7c3aed', damage: 1 });
+    g.phase = 'boss';
+  }
+  if (endlessTime > 0 && Math.floor(endlessTime) % 180 === 0 && Math.floor(endlessTime) > 0 && !g.bossSpawned) {
+    g.bossSpawned = true;
+    const bossHp = Math.floor(200 * difficultyMult);
+    g.enemies.push({ id: eid++, x: p.x + 600, y: p.y, hp: bossHp, maxHp: bossHp, speed: 0.4, radius: 40, type: 'boss', color: '#7c3aed', damage: 1 });
     g.phase = 'boss';
   }
   // Reset boss flag after boss is killed
@@ -134,8 +162,9 @@ function updateGame(g: GameState): void {
     if (g.phase === 'boss') g.phase = 'playing';
   }
 
-  // Spawn items
-  if (now - g.lastItemSpawn > 2000) {
+  // Spawn items MORE frequently — kids need rewards!
+  // Every 1.2 seconds, with more healthy snacks
+  if (now - g.lastItemSpawn > 1200) {
     g.lastItemSpawn = now;
     const snack = shuffle(snackItems)[0];
     const rare = Math.random() < 0.1;
@@ -176,7 +205,7 @@ function updateGame(g: GameState): void {
       if (p.skillActive && g.charDef.id === 'dasom') continue;
       p.hp -= e.damage;
       p.invincible = true;
-      p.invincibleTimer = 1;
+      p.invincibleTimer = 2; // 2 seconds of safety after hit
       if (p.hp <= 0) { g.phase = 'over'; return; }
     }
   }
